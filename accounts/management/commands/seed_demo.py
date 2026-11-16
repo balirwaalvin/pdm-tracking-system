@@ -18,7 +18,8 @@ from django.utils import timezone
 
 import datetime
 
-from loans.models import Appraisal, Disbursement, LoanApplication
+from loans import workflow
+from loans.models import Appraisal, Disbursement, LoanApplication, Repayment
 from registry.models import AdminUnit, EnterpriseGroup, Household
 from saccos.models import FundRelease, Sacco, SaccoChecklistItem
 
@@ -70,6 +71,8 @@ HOUSEHOLDS = [
     ("Moses Waiswa", "CM86002468KLMN", "256700000019", "M", "adult", False, 5, "poor", "Kitega", "Kitega Piggery Group", True),
     ("Sylvia Nambi", "CF91003579OPQR", "256700000020", "F", "youth", False, 4, "poor", "Seeta Central", "Seeta Poultry Farmers", True),
     ("Ronald Lubega", "CM84004680STUV", "256700000021", "M", "adult", True, 6, "very_poor", "Bajjo", "Kitega Piggery Group", True),
+    ("Joyce Nalwoga", "CF80005791WXYZ", "256700000022", "F", "adult", False, 5, "poor", "Kitega", "Kitega Piggery Group", True),
+    ("Henry Mubiru", "CM93006802ABCE", "256700000023", "M", "youth", False, 3, "poor", "Bajjo", "Kitega Piggery Group", True),
 ]
 
 
@@ -283,7 +286,16 @@ class Command(BaseCommand):
              "The group may reapply for a poultry or produce enterprise.", (2, 2, 3)),
             ("CM86002468KLMN", "Piggery: four weaners, feed and drugs", 600_000, 12, LoanApplication.Status.DISBURSED, 46,
              "Experienced pig farmer; repayment plan matches pig sales.", (4, 4, 4)),
+            ("CM93006802ABCE", "Piggery: three weaners and a sty", 450_000, 9, LoanApplication.Status.DISBURSED, 81,
+             "Group vouches for him; first loan, so a modest amount.", (3, 3, 4)),
+            ("CF80005791WXYZ", "Pig feed milling for group members", 900_000, 12, LoanApplication.Status.DISBURSED, 141,
+             "Feed is the group's biggest cost; plan is sound.", (4, 3, 4)),
         ]
+        # household NIN -> repayments as (days after payout, amount, reference)
+        repayments = {
+            "CM86002468KLMN": [(30, 53_000, "SAMPLE-RCPT-0001")],
+            "CM93006802ABCE": [(31, 52_250, "SAMPLE-RCPT-0002")],
+        }
         for nin, enterprise, amount, term, status, days_ago, reason, scores in decided:
             household = Household.objects.get(nin=nin)
             decided_at = timezone.now() - datetime.timedelta(days=days_ago)
@@ -323,7 +335,23 @@ class Command(BaseCommand):
                         "amount": amount,
                         "disbursed_on": today - datetime.timedelta(days=days_ago - 1),
                         "method": Disbursement.Method.MOBILE,
-                        "reference": "SAMPLE-TXN-0001",
+                        "reference": f"SAMPLE-TXN-{loan.pk:04d}",
                         "recorded_by": sacco_user,
                     },
                 )
+                for days_after, paid, reference in repayments.get(nin, []):
+                    Repayment.objects.get_or_create(
+                        application=loan,
+                        reference=reference,
+                        defaults={
+                            "amount": paid,
+                            "paid_on": loan.disbursement.disbursed_on + datetime.timedelta(days=days_after),
+                            "method": Repayment.Method.MOBILE,
+                            "recorded_by": sacco_user,
+                        },
+                    )
+                # Bring the status in line with the repayments (no change if already there).
+                loan.refresh_from_db()
+                if loan.status == LoanApplication.Status.DISBURSED and loan.repayments.exists():
+                    workflow.after_repayment(loan)
+                workflow.flag_default(loan)

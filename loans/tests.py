@@ -232,12 +232,13 @@ class DisbursementTests(TestCase):
         return self.client.post(reverse("loans:loan_disburse", args=[loan.pk]), data)
 
     def test_sacco_official_records_a_disbursement(self):
+        already_paid_out = self.loan.sacco.total_disbursed  # sample loans in the seed
         self.disburse()
         self.loan.refresh_from_db()
         self.assertEqual(self.loan.status, Status.DISBURSED)
         self.assertEqual(self.loan.disbursement.amount, 800_000)
         self.assertEqual(self.loan.disbursement.recorded_by, self.sacco_user)
-        self.assertEqual(self.loan.sacco.total_disbursed, 600_000 + 800_000)  # the seed already paid out 600,000
+        self.assertEqual(self.loan.sacco.total_disbursed, already_paid_out + 800_000)
 
     def test_cannot_pay_out_more_than_approved(self):
         response = self.disburse(amount=900_000)
@@ -247,7 +248,7 @@ class DisbursementTests(TestCase):
 
     def test_cannot_pay_out_more_than_the_sacco_holds(self):
         release = self.loan.sacco.releases.get()
-        release.amount = 600_000 + 500_000  # the seed already paid out 600,000
+        release.amount = self.loan.sacco.total_disbursed + 500_000
         release.save()
         response = self.disburse()
         self.assertContains(response, "only holds UGX 500,000")
