@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ sacco.name }} · PDM Tracking System{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'saccos:sacco_list' %}">SACCOs</a></li><li class="breadcrumb-item active">{{ sacco.name }}</li></ol></nav>
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h3 mb-1">{{ sacco.name }}</h1>
+    <p class="text-muted mb-0">{{ sacco.registration_number }} · {{ sacco.parish.name }} parish · {{ sacco.bank_name|default:"No bank recorded" }}</p>
+  </div>
+  <div>{% if sacco.is_eligible %}<span class="badge text-bg-success fs-6">Eligible for the fund</span>{% else %}<span class="badge text-bg-warning fs-6">Not yet eligible</span>{% endif %}</div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h6 text-uppercase text-muted">Eligibility checklist ({{ sacco.checklist_met }} of {{ sacco.checklist_total }})</h2>
+        <ul class="list-group list-group-flush">
+          {% for item in checklist %}
+          <li class="list-group-item px-0 d-flex justify-content-between align-items-start">
+            <div>
+              {% if item.met %}<span class="text-success fw-bold">Met</span>{% else %}<span class="text-danger fw-bold">Not met</span>{% endif %}
+              · {{ item.requirement }}
+              {% if item.checked_by %}<div class="small text-muted">Checked by {{ item.checked_by }} on {{ item.checked_at|date:"j M Y" }}{% if item.note %}: {{ item.note }}{% endif %}</div>{% endif %}
+            </div>
+            {% if can_tick %}
+            <form method="post" action="{% url 'saccos:toggle_checklist' item.pk %}">{% csrf_token %}
+              <button class="btn btn-sm {% if item.met %}btn-outline-secondary{% else %}btn-outline-success{% endif %}">{% if item.met %}Mark not met{% else %}Mark met{% endif %}</button>
+            </form>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="h6 text-uppercase text-muted mb-0">Fund releases</h2>
+          {% if can_record_release %}<a class="btn btn-sm btn-pdm" href="{% url 'saccos:release_create' sacco.pk %}">Record a release</a>{% endif %}
+        </div>
+        <p class="mt-2 mb-2">Confirmed total: <strong>UGX {{ sacco.total_released|intcomma }}</strong></p>
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Date</th><th>Year</th><th class="text-end">Amount (UGX)</th><th>Status</th></tr></thead>
+          <tbody>
+          {% for r in releases %}
+            <tr>
+              <td>{{ r.release_date|date:"j M Y" }}</td>
+              <td>{{ r.financial_year }}</td>
+              <td class="text-end">{{ r.amount|intcomma }}</td>
+              <td>
+                {% if r.is_confirmed %}<span class="badge text-bg-success">Confirmed</span><div class="small text-muted">by {{ r.confirmed_by }}</div>
+                {% elif can_confirm_release %}
+                  <form method="post" action="{% url 'saccos:release_confirm' r.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success">Confirm receipt</button></form>
+                {% else %}<span class="badge text-bg-warning">Awaiting district</span>{% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="text-muted">No releases recorded.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h6 text-uppercase text-muted">Enterprise groups</h2>
+        <ul class="mb-0">{% for g in groups %}<li><a href="{% url 'registry:group_detail' g.pk %}">{{ g.name }}</a> · {{ g.get_enterprise_display }}</li>{% empty %}<li class="text-muted">None linked yet.</li>{% endfor %}</ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

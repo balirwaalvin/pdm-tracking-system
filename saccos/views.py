@@ -49,3 +49,16 @@ class SaccoDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         context["can_record_release"] = user.has_role(roles.NATIONAL_OFFICIAL)
         context["can_confirm_release"] = user.has_role(roles.DISTRICT_OFFICIAL)
         return context
+
+
+@require_POST
+@role_required(roles.SACCO_OFFICIAL)
+def toggle_checklist_item(request, pk):
+    item = get_object_or_404(SaccoChecklistItem.objects.select_related("sacco__parish"), pk=pk)
+    check_unit_in_scope(request.user, item.sacco.parish)
+    item.met = not item.met
+    item.checked_by = request.user
+    item.checked_at = timezone.now()
+    item.save()
+    messages.success(request, f"“{item.requirement}” marked as {'met' if item.met else 'not met'}.")
+    return redirect("saccos:sacco_detail", pk=item.sacco_id)
