@@ -143,3 +143,59 @@ class AppraisalTests(TestCase):
         response = self.client.get(reverse("loans:loan_detail", args=[self.loan.pk]))
         self.assertContains(response, "11 / 15")
         self.assertContains(response, "submitted → appraised")
+
+
+class DecisionTests(TestCase):
+    """The SACCO official approves or rejects an appraised loan, with reasons for refusals."""
+
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.grace_loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")  # appraised
+        self.isaac_loan = LoanApplication.objects.get(household__nin="CM92004567EFGH")  # submitted
+
+    def decide(self, loan, decision, reason="", username="sacco"):
+        self.client.force_login(User.objects.get(username=username))
+        return self.client.post(
+            reverse("loans:loan_decide", args=[loan.pk]), {"decision": decision, "reason": reason}
+        )
+
+    def test_sacco_official_approves_an_appraised_loan(self):
+        self.decide(self.grace_loan, "approve")
+        self.grace_loan.refresh_from_db()
+        self.assertEqual(self.grace_loan.status, Status.APPROVED)
+        self.assertEqual(self.grace_loan.decided_by.username, "sacco")
+        self.assertIsNotNone(self.grace_loan.decided_at)
+
+    def test_rejection_keeps_the_reason(self):
+        self.decide(self.grace_loan, "reject", "Business plan does not show a market.")
+        self.grace_loan.refresh_from_db()
+        self.assertEqual(self.grace_loan.status, Status.REJECTED)
+        self.assertEqual(self.grace_loan.decision_reason, "Business plan does not show a market.")
+
+    def test_rejection_without_a_reason_is_refused(self):
+        response = self.decide(self.grace_loan, "reject", "   ")
+        self.grace_loan.refresh_from_db()
+        self.assertEqual(self.grace_loan.status, Status.APPRAISED)
+        self.assertContains(self.client.get(response.url), "Give the reason for rejecting")
+
+    def test_a_loan_not_yet_appraised_cannot_be_decided(self):
+        self.decide(self.isaac_loan, "approve")
+        self.isaac_loan.refresh_from_db()
+        self.assertEqual(self.isaac_loan.status, Status.SUBMITTED)
+
+    def test_other_roles_cannot_decide(self):
+        for username in ("groupexec", "parishchief", "pdc", "subcounty", "national", "auditor"):
+            response = self.decide(self.grace_loan, "approve", username=username)
+            self.assertEqual(response.status_code, 403, username)
+        self.grace_loan.refresh_from_db()
+        self.assertEqual(self.grace_loan.status, Status.APPRAISED)
+
+    def test_decision_form_shows_only_for_the_sacco_official(self):
+        url = reverse("loans:loan_detail", args=[self.grace_loan.pk])
+        self.client.force_login(User.objects.get(username="sacco"))
+        self.assertContains(self.client.get(url), "Record decision")
+        self.client.force_login(User.objects.get(username="pdc"))
+        self.assertNotContains(self.client.get(url), "Record decision")

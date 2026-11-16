@@ -16,7 +16,7 @@ Day 1 was Tue 17 Nov 2026; Day 10 is Thu 26 Nov 2026; the buffer runs to Mon 30 
 
 ## Day 5: loan decisions
 
-- [ ] Approve, and reject with reasons. Only the SACCO official may decide, and only from APPRAISED. A rejection reason is required. Use `move()`.
+- [x] Approve, and reject with reasons. Only the SACCO official may decide, and only from APPRAISED. A rejection reason is required. Use `move()`.
 - [ ] Disbursement record: a model with amount, date, method and reference, recorded by the SACCO official. It moves the loan APPROVED → DISBURSED and must not exceed the approved amount or the SACCO's confirmed releases.
 - [ ] Finish the tests for the loan workflow: approve, reject, disburse, wrong role and wrong status.
 
