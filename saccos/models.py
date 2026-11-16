@@ -33,6 +33,30 @@ class Sacco(models.Model):
     def __str__(self):
         return self.name
 
+    def ensure_checklist(self):
+        """Create any missing standard checklist items."""
+        for requirement in DEFAULT_CHECKLIST:
+            SaccoChecklistItem.objects.get_or_create(sacco=self, requirement=requirement)
+
+    @property
+    def checklist_met(self):
+        return self.checklist.filter(met=True).count()
+
+    @property
+    def checklist_total(self):
+        return self.checklist.count()
+
+    @property
+    def is_eligible(self):
+        """A SACCO may receive the fund only when it is active and meets every requirement."""
+        total = self.checklist_total
+        return self.status == self.Status.ACTIVE and total > 0 and self.checklist_met == total
+
+    @property
+    def total_released(self):
+        """Confirmed fund releases, in Uganda shillings."""
+        return self.releases.exclude(confirmed_at=None).aggregate(total=models.Sum("amount"))["total"] or 0
+
 
 # Requirements a PDM SACCO must meet before it receives the fund.
 DEFAULT_CHECKLIST = [
