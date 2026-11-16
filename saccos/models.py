@@ -32,3 +32,35 @@ class Sacco(models.Model):
 
     def __str__(self):
         return self.name
+
+
+# Requirements a PDM SACCO must meet before it receives the fund.
+DEFAULT_CHECKLIST = [
+    "Registered with the Ministry of Trade",
+    "Bank account opened in the SACCO's name",
+    "Board elected at a general meeting",
+    "Loan Committee in place",
+    "Supervisory Board in place",
+    "Bylaws adopted by members",
+    "Members registered with their enterprise groups",
+]
+
+
+class SaccoChecklistItem(models.Model):
+    sacco = models.ForeignKey(Sacco, on_delete=models.CASCADE, related_name="checklist")
+    requirement = models.CharField(max_length=200)
+    met = models.BooleanField(default=False)
+    note = models.CharField(max_length=255, blank=True)
+    checked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    checked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["sacco", "requirement"], name="unique_requirement_per_sacco"),
+        ]
+
+    def __str__(self):
+        return self.requirement
