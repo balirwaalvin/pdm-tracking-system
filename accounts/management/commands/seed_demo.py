@@ -18,7 +18,7 @@ from django.utils import timezone
 
 import datetime
 
-from loans.models import Appraisal, LoanApplication
+from loans.models import Appraisal, Disbursement, LoanApplication
 from registry.models import AdminUnit, EnterpriseGroup, Household
 from saccos.models import FundRelease, Sacco, SaccoChecklistItem
 
@@ -67,6 +67,9 @@ HOUSEHOLDS = [
     ("Betty Namuddu", "CF83007788YZAB", "256700000016", "F", "adult", False, 4, "middle", "Bajjo", None, False),
     ("Paul Kizza", "CM90009900CDEF", "256700000017", "M", "youth", False, 3, "poor", "Nantabulirwa A", "Nantabulirwa Coffee Growers", False),
     ("Annet Nakiyimba", "CF76001357GHIJ", "256700000018", "F", "older", False, 6, "very_poor", "Nantabulirwa B", "Nantabulirwa Coffee Growers", False),
+    ("Moses Waiswa", "CM86002468KLMN", "256700000019", "M", "adult", False, 5, "poor", "Kitega", "Kitega Piggery Group", True),
+    ("Sylvia Nambi", "CF91003579OPQR", "256700000020", "F", "youth", False, 4, "poor", "Seeta Central", "Seeta Poultry Farmers", True),
+    ("Ronald Lubega", "CM84004680STUV", "256700000021", "M", "adult", True, 6, "very_poor", "Bajjo", "Kitega Piggery Group", True),
 ]
 
 
@@ -265,4 +268,62 @@ class Command(BaseCommand):
                 "submitted_at": now,
             },
         )
+        self.create_decided_loans(groupexec, sacco_user)
         self.stdout.write(f"  {LoanApplication.objects.count()} loan applications")
+
+    def create_decided_loans(self, groupexec, sacco_user):
+        """One loan at each later stage: approved, rejected and paid out."""
+        today = timezone.localdate()
+        # household NIN, enterprise, amount, term, status, days ago decided, reason, scores
+        decided = [
+            ("CM84004680STUV", "Two in-calf piglets and a sty", 700_000, 12, LoanApplication.Status.APPROVED, 2,
+             "Strong plan and the group vouches for him.", (4, 3, 4)),
+            ("CF91003579OPQR", "Mobile phone repair kiosk", 1_000_000, 6, LoanApplication.Status.REJECTED, 5,
+             "Phone repair is not a PDM pillar enterprise in this parish, and six months is too short to repay UGX 1M. "
+             "The group may reapply for a poultry or produce enterprise.", (2, 2, 3)),
+            ("CM86002468KLMN", "Piggery: four weaners, feed and drugs", 600_000, 12, LoanApplication.Status.DISBURSED, 46,
+             "Experienced pig farmer; repayment plan matches pig sales.", (4, 4, 4)),
+        ]
+        for nin, enterprise, amount, term, status, days_ago, reason, scores in decided:
+            household = Household.objects.get(nin=nin)
+            decided_at = timezone.now() - datetime.timedelta(days=days_ago)
+            approve = status != LoanApplication.Status.REJECTED
+            loan, created = LoanApplication.objects.get_or_create(
+                household=household,
+                enterprise=enterprise,
+                defaults={
+                    "enterprise_group": household.enterprise_group,
+                    "sacco": household.enterprise_group.sacco,
+                    "amount": amount,
+                    "business_plan": f"{enterprise}. Repay monthly from sales.",
+                    "term_months": term,
+                    "status": status,
+                    "created_by": groupexec,
+                    "submitted_at": decided_at - datetime.timedelta(days=7),
+                    "decided_by": sacco_user,
+                    "decided_at": decided_at,
+                    "decision_reason": reason,
+                },
+            )
+            Appraisal.objects.get_or_create(
+                application=loan,
+                defaults={
+                    "viability_score": scores[0],
+                    "repayment_score": scores[1],
+                    "group_score": scores[2],
+                    "recommendation": Appraisal.Recommendation.APPROVE if approve else Appraisal.Recommendation.REJECT,
+                    "reasons": reason,
+                    "appraised_by": sacco_user,
+                },
+            )
+            if status == LoanApplication.Status.DISBURSED:
+                Disbursement.objects.get_or_create(
+                    application=loan,
+                    defaults={
+                        "amount": amount,
+                        "disbursed_on": today - datetime.timedelta(days=days_ago - 1),
+                        "method": Disbursement.Method.MOBILE,
+                        "reference": "SAMPLE-TXN-0001",
+                        "recorded_by": sacco_user,
+                    },
+                )

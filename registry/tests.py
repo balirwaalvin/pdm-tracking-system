@@ -189,4 +189,4 @@ class EnterpriseGroupPageTests(TestCase):
         group = EnterpriseGroup.objects.get(name="Seeta Poultry Farmers")
         response = self.client.get(reverse("registry:group_detail", args=[group.pk]))
         self.assertContains(response, "Grace Nakato")
-        self.assertContains(response, "Members (3)")
+        self.assertContains(response, "Members (4)")

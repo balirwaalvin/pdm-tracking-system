@@ -234,7 +234,7 @@ class DisbursementTests(TestCase):
         self.assertEqual(self.loan.status, Status.DISBURSED)
         self.assertEqual(self.loan.disbursement.amount, 800_000)
         self.assertEqual(self.loan.disbursement.recorded_by, self.sacco_user)
-        self.assertEqual(self.loan.sacco.total_disbursed, 800_000)
+        self.assertEqual(self.loan.sacco.total_disbursed, 600_000 + 800_000)  # the seed already paid out 600,000
 
     def test_cannot_pay_out_more_than_approved(self):
         response = self.disburse(amount=900_000)
@@ -244,11 +244,11 @@ class DisbursementTests(TestCase):
 
     def test_cannot_pay_out_more_than_the_sacco_holds(self):
         release = self.loan.sacco.releases.get()
-        release.amount = 500_000
+        release.amount = 600_000 + 500_000  # the seed already paid out 600,000
         release.save()
         response = self.disburse()
         self.assertContains(response, "only holds UGX 500,000")
-        self.assertFalse(Disbursement.objects.exists())
+        self.assertFalse(Disbursement.objects.filter(application=self.loan).exists())
 
     def test_unconfirmed_releases_do_not_count(self):
         self.loan.sacco.releases.update(confirmed_at=None)
@@ -266,12 +266,12 @@ class DisbursementTests(TestCase):
         self.assertRedirects(response, reverse("loans:loan_detail", args=[isaac_loan.pk]))
         isaac_loan.refresh_from_db()
         self.assertEqual(isaac_loan.status, Status.SUBMITTED)
-        self.assertFalse(Disbursement.objects.exists())
+        self.assertFalse(Disbursement.objects.filter(application=isaac_loan).exists())
 
     def test_a_loan_cannot_be_disbursed_twice(self):
         self.disburse()
         self.disburse(reference="SAMPLE-TXN-002")
-        self.assertEqual(Disbursement.objects.count(), 1)
+        self.assertEqual(Disbursement.objects.filter(application=self.loan).count(), 1)
 
     def test_other_roles_cannot_disburse(self):
         for username in ("groupexec", "parishchief", "pdc", "district", "national", "auditor"):
