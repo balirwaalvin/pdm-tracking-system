@@ -71,3 +71,25 @@ class AppraisalForm(forms.ModelForm):
             "group_score": forms.RadioSelect,
             "reasons": forms.Textarea(attrs={"rows": 4}),
         }
+
+
+class DecisionForm(forms.Form):
+    """The SACCO's decision on an appraised application. Refusals must say why."""
+
+    APPROVE = "approve"
+    REJECT = "reject"
+
+    decision = forms.ChoiceField(
+        choices=[(APPROVE, "Approve"), (REJECT, "Reject")], widget=forms.RadioSelect
+    )
+    reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+        help_text="Required when rejecting. The applicant can see it.",
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("decision") == self.REJECT and not cleaned.get("reason", "").strip():
+            self.add_error("reason", "Give the reason for rejecting this application.")
+        return cleaned
