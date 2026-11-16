@@ -1,3 +1,4 @@
+from auditlog.models import LogEntry
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
@@ -74,3 +75,24 @@ class LoanCreateView(RoleRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse("loans:loan_detail", args=[self.object.pk])
+
+
+class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
+    model = LoanApplication
+    allowed_roles = LOAN_VIEW_ROLES
+    unit_field = "household__village"
+    context_object_name = "loan"
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "household", "household__village", "enterprise_group", "sacco", "created_by", "decided_by"
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        loan, user = self.object, self.request.user
+        context["appraisal"] = getattr(loan, "appraisal", None)
+        context["can_submit"] = workflow.can_move(loan, Status.SUBMITTED, user)
+        context["can_appraise"] = workflow.can_move(loan, Status.APPRAISED, user)
+        context["history"] = LogEntry.objects.get_for_object(loan).select_related("actor").order_by("timestamp")
+        return context
