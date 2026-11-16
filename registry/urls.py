@@ -10,4 +10,7 @@ urlpatterns = [
     path("households/<int:pk>/", views.HouseholdDetailView.as_view(), name="household_detail"),
     path("households/<int:pk>/edit/", views.HouseholdUpdateView.as_view(), name="household_edit"),
     path("households/<int:pk>/verify/", views.verify_household, name="household_verify"),
+    path("groups/", views.EnterpriseGroupListView.as_view(), name="group_list"),
+    path("groups/new/", views.EnterpriseGroupCreateView.as_view(), name="group_create"),
+    path("groups/<int:pk>/", views.EnterpriseGroupDetailView.as_view(), name="group_detail"),
 ]

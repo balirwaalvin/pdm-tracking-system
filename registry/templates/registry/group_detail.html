@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ group.name }} · PDM Tracking System{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'registry:group_list' %}">Enterprise groups</a></li><li class="breadcrumb-item active">{{ group.name }}</li></ol></nav>
+<h1 class="h3 mb-1">{{ group.name }}</h1>
+<p class="text-muted">{{ group.get_enterprise_display }} · {{ group.parish.name }} parish{% if group.registration_number %} · Reg. no. {{ group.registration_number }}{% endif %}</p>
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Members ({{ members|length }})</h2>
+    <p class="small text-muted">PDM enterprise groups usually have 10 to 30 households.</p>
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Household</th><th>Village</th><th>Verification</th></tr></thead>
+      <tbody>
+      {% for h in members %}
+        <tr><td><a href="{% url 'registry:household_detail' h.pk %}">{{ h.head_name }}</a></td><td>{{ h.village.name }}</td><td>{% include "registry/_verification_badge.html" with household=h %}</td></tr>
+      {% empty %}
+        <tr><td colspan="3" class="text-muted">No members yet. The Parish Chief adds households to a group from the household form.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

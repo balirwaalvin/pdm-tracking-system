@@ -10,8 +10,8 @@ from accounts import roles
 from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_required
 from accounts.scoping import check_unit_in_scope
 
-from .forms import HouseholdForm
-from .models import Household
+from .forms import EnterpriseGroupForm, HouseholdForm
+from .models import EnterpriseGroup, Household
 
 # Roles that may look at household records.
 HOUSEHOLD_VIEW_ROLES = (
@@ -150,3 +150,56 @@ def verify_household(request, pk):
     household.save()
     messages.success(request, f"{household.head_name} marked as {household.get_verification_display().lower()}.")
     return redirect("registry:household_detail", pk=pk)
+
+
+class EnterpriseGroupListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
+    model = EnterpriseGroup
+    allowed_roles = HOUSEHOLD_VIEW_ROLES
+    unit_field = "parish"
+    template_name = "registry/group_list.html"
+    context_object_name = "groups"
+
+    def get_queryset(self):
+        from django.db.models import Count
+
+        return super().get_queryset().select_related("parish").annotate(members_total=Count("members"))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_register"] = self.request.user.has_role(roles.SUBCOUNTY_OFFICIAL)
+        return context
+
+
+class EnterpriseGroupCreateView(RoleRequiredMixin, CreateView):
+    """The sub-county CDO registers enterprise groups in parishes under them."""
+
+    model = EnterpriseGroup
+    form_class = EnterpriseGroupForm
+    allowed_roles = (roles.SUBCOUNTY_OFFICIAL,)
+    template_name = "registry/group_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.registered_by = self.request.user
+        messages.success(self.request, "Enterprise group registered.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("registry:group_detail", args=[self.object.pk])
+
+
+class EnterpriseGroupDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
+    model = EnterpriseGroup
+    allowed_roles = HOUSEHOLD_VIEW_ROLES
+    unit_field = "parish"
+    template_name = "registry/group_detail.html"
+    context_object_name = "group"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["members"] = self.object.members.select_related("village")
+        return context
