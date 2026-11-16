@@ -9,4 +9,5 @@ urlpatterns = [
     path("households/new/", views.HouseholdCreateView.as_view(), name="household_create"),
     path("households/<int:pk>/", views.HouseholdDetailView.as_view(), name="household_detail"),
     path("households/<int:pk>/edit/", views.HouseholdUpdateView.as_view(), name="household_edit"),
+    path("households/<int:pk>/verify/", views.verify_household, name="household_verify"),
 ]

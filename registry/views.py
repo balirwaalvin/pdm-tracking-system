@@ -119,3 +119,34 @@ class HouseholdUpdateView(RoleRequiredMixin, ScopedQuerysetMixin, UpdateView):
 
     def get_success_url(self):
         return reverse("registry:household_detail", args=[self.object.pk])
+
+
+@require_POST
+@role_required(roles.LC1_CHAIRPERSON)
+def verify_household(request, pk):
+    """The LC I Chairperson confirms or rejects a household in their own village."""
+    household = get_object_or_404(Household.objects.select_related("village"), pk=pk)
+    check_unit_in_scope(request.user, household.village)
+
+    if household.verification != Household.Verification.PENDING:
+        messages.warning(request, "This household has already been checked.")
+        return redirect("registry:household_detail", pk=pk)
+
+    decision = request.POST.get("decision")
+    note = request.POST.get("note", "").strip()
+    if decision == "reject" and not note:
+        messages.error(request, "Give a reason when you reject a household.")
+        return redirect("registry:household_detail", pk=pk)
+    if decision not in ("verify", "reject"):
+        messages.error(request, "Choose confirm or reject.")
+        return redirect("registry:household_detail", pk=pk)
+
+    household.verification = (
+        Household.Verification.VERIFIED if decision == "verify" else Household.Verification.REJECTED
+    )
+    household.verified_by = request.user
+    household.verified_at = timezone.now()
+    household.verification_note = note
+    household.save()
+    messages.success(request, f"{household.head_name} marked as {household.get_verification_display().lower()}.")
+    return redirect("registry:household_detail", pk=pk)
