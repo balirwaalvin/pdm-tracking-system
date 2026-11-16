@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load crispy_forms_tags humanize %}
 {% block title %}Loan {{ loan.pk }} · PDM Tracking System{% endblock %}
 {% block content %}
 <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'loans:loan_list' %}">Loans</a></li><li class="breadcrumb-item active">Loan {{ loan.pk }}</li></ol></nav>
@@ -38,6 +38,13 @@
       {% if loan.decided_by %}
         <hr><p class="mb-1"><strong>Decision:</strong> {{ loan.get_status_display }} by {{ loan.decided_by }} on {{ loan.decided_at|date:"j M Y" }}</p>
         {% if loan.decision_reason %}<p class="mb-0">{{ loan.decision_reason|linebreaksbr }}</p>{% endif %}
+      {% endif %}
+      {% if can_decide %}
+        <hr><h3 class="h6">Decision</h3>
+        <form method="post" action="{% url 'loans:loan_decide' loan.pk %}" novalidate>{% csrf_token %}
+          {{ decision_form|crispy }}
+          <button class="btn btn-pdm">Record decision</button>
+        </form>
       {% endif %}
     </div></div>
   </div>
