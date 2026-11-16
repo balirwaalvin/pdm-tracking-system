@@ -1,0 +1,28 @@
+# Render blueprint: one web service and one free PostgreSQL database.
+databases:
+  - name: pdm-tracker-db
+    plan: free
+    databaseName: pdm_tracker
+
+services:
+  - type: web
+    name: pdm-tracking-system
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn config.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pdm-tracker-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://*.onrender.com"
