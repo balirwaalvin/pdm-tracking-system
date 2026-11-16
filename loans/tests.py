@@ -1,3 +1,145 @@
+from django.core.exceptions import PermissionDenied
+from django.core.management import call_command
 from django.test import TestCase
+from django.urls import reverse
 
-# Create your tests here.
+from accounts.models import User
+from registry.models import Household
+
+from . import workflow
+from .models import LoanApplication
+
+Status = LoanApplication.Status
+
+
+def seed():
+    call_command("seed_demo", verbosity=0, stdout=open("/dev/null", "w"))
+
+
+class WorkflowRuleTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.isaac_loan = LoanApplication.objects.get(household__nin="CM92004567EFGH")  # submitted
+        self.sacco = User.objects.get(username="sacco")
+        self.groupexec = User.objects.get(username="groupexec")
+
+    def test_a_loan_cannot_skip_appraisal(self):
+        with self.assertRaises(workflow.TransitionError):
+            workflow.move(self.isaac_loan, Status.APPROVED, self.sacco)
+
+    def test_only_the_named_role_can_move_a_loan(self):
+        with self.assertRaises(PermissionDenied):
+            workflow.move(self.isaac_loan, Status.APPRAISED, self.groupexec)
+
+    def test_system_only_changes_cannot_be_made_by_a_person(self):
+        self.isaac_loan.status = Status.DISBURSED
+        self.assertFalse(workflow.can_move(self.isaac_loan, Status.DEFAULTED, self.sacco))
+        self.assertTrue(workflow.can_move(self.isaac_loan, Status.DEFAULTED, None))
+
+    def test_submitting_records_the_time(self):
+        loan = LoanApplication.objects.create(
+            household=self.isaac_loan.household,
+            enterprise_group=self.isaac_loan.enterprise_group,
+            sacco=self.isaac_loan.sacco,
+            amount=100_000,
+            enterprise="Test",
+            business_plan="Test",
+        )
+        workflow.move(loan, Status.SUBMITTED, self.groupexec)
+        self.assertIsNotNone(loan.submitted_at)
+
+
+class LoanApplicationPageTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def login(self, username):
+        self.client.force_login(User.objects.get(username=username))
+
+    def apply(self, household, **overrides):
+        data = {"household": household.pk, "amount": 600_000, "enterprise": "Piglets", "business_plan": "Raise pigs", "term_months": 12}
+        data.update(overrides)
+        return self.client.post(reverse("loans:loan_create"), data)
+
+    def verified_household_without_loan(self):
+        household = Household.objects.get(head_name="John Ssemwogerere")
+        household.verification = Household.Verification.VERIFIED
+        household.save()
+        return household
+
+    def test_group_executive_creates_a_draft(self):
+        self.login("groupexec")
+        household = self.verified_household_without_loan()
+        self.apply(household)
+        loan = LoanApplication.objects.get(household=household)
+        self.assertEqual(loan.status, Status.DRAFT)
+        self.assertEqual(loan.sacco.name, "Seeta PDM SACCO")
+
+    def test_unverified_household_cannot_apply(self):
+        self.login("groupexec")
+        florence = Household.objects.get(head_name="Florence Atim")  # pending verification
+        response = self.apply(florence)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(LoanApplication.objects.filter(household=florence).exists())
+
+    def test_loan_above_the_ceiling_is_refused(self):
+        self.login("groupexec")
+        household = self.verified_household_without_loan()
+        response = self.apply(household, amount=1_500_000)
+        self.assertContains(response, "cannot be more than UGX 1,000,000")
+
+    def test_household_with_an_open_loan_cannot_apply_again(self):
+        self.login("groupexec")
+        grace = Household.objects.get(nin="CF85001234ABCD")
+        response = self.apply(grace)
+        self.assertContains(response, "already has an open loan")
+
+    def test_group_executive_submits_a_draft(self):
+        self.login("groupexec")
+        household = self.verified_household_without_loan()
+        self.apply(household)
+        loan = LoanApplication.objects.get(household=household)
+        self.client.post(reverse("loans:loan_submit", args=[loan.pk]))
+        loan.refresh_from_db()
+        self.assertEqual(loan.status, Status.SUBMITTED)
+
+    def test_parish_chief_cannot_submit(self):
+        loan = LoanApplication.objects.get(household__nin="CM92004567EFGH")
+        self.login("parishchief")
+        response = self.client.post(reverse("loans:loan_submit", args=[loan.pk]))
+        self.assertEqual(response.status_code, 403)
+
+
+class AppraisalTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.client.force_login(User.objects.get(username="sacco"))
+        self.loan = LoanApplication.objects.get(household__nin="CM92004567EFGH")  # submitted
+
+    def appraisal_data(self):
+        return {"viability_score": 4, "repayment_score": 3, "group_score": 4, "recommendation": "approve", "reasons": "Good plan."}
+
+    def test_sacco_official_appraises_a_submitted_loan(self):
+        self.client.post(reverse("loans:loan_appraise", args=[self.loan.pk]), self.appraisal_data())
+        self.loan.refresh_from_db()
+        self.assertEqual(self.loan.status, Status.APPRAISED)
+        self.assertEqual(self.loan.appraisal.total_score, 11)
+        self.assertEqual(self.loan.appraisal.appraised_by.username, "sacco")
+
+    def test_appraisal_page_redirects_for_a_loan_already_appraised(self):
+        grace_loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
+        response = self.client.get(reverse("loans:loan_appraise", args=[grace_loan.pk]))
+        self.assertRedirects(response, reverse("loans:loan_detail", args=[grace_loan.pk]))
+
+    def test_loan_detail_shows_appraisal_and_history(self):
+        self.client.post(reverse("loans:loan_appraise", args=[self.loan.pk]), self.appraisal_data())
+        response = self.client.get(reverse("loans:loan_detail", args=[self.loan.pk]))
+        self.assertContains(response, "11 / 15")
+        self.assertContains(response, "submitted → appraised")
