@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}SACCOs · PDM Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">PDM SACCOs</h1>
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light"><tr><th>SACCO</th><th>Parish</th><th>Status</th><th>Checklist</th><th class="text-end">Released (UGX)</th></tr></thead>
+      <tbody>
+      {% for s in saccos %}
+        <tr>
+          <td><a href="{% url 'saccos:sacco_detail' s.pk %}">{{ s.name }}</a><div class="small text-muted">{{ s.registration_number }}</div></td>
+          <td>{{ s.parish.name }}, {{ s.parish.parent.name }}</td>
+          <td>{{ s.get_status_display }}</td>
+          <td>{% if s.is_eligible %}<span class="badge text-bg-success">Eligible</span>{% else %}<span class="badge text-bg-warning">{{ s.checklist_met }} of {{ s.checklist_total }} met</span>{% endif %}</td>
+          <td class="text-end">{{ s.total_released|intcomma }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="text-muted text-center py-4">No SACCOs in your area.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
