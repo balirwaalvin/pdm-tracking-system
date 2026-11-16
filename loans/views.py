@@ -13,7 +13,7 @@ from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_require
 from accounts.scoping import check_unit_in_scope, scope_queryset
 
 from . import workflow
-from .forms import AppraisalForm, DecisionForm, DisbursementForm, LoanApplicationForm
+from .forms import AppraisalForm, DecisionForm, DisbursementForm, LoanApplicationForm, RepaymentForm
 from .models import LoanApplication
 
 Status = LoanApplication.Status
@@ -98,6 +98,11 @@ class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         context["can_decide"] = workflow.can_move(loan, Status.APPROVED, user)
         context["disbursement"] = getattr(loan, "disbursement", None)
         context["can_disburse"] = workflow.can_move(loan, Status.DISBURSED, user)
+        context["schedule"] = loan.schedule_with_status()
+        context["repayments"] = loan.repayments.select_related("recorded_by")
+        context["can_repay"] = loan.status in workflow.ACTIVE_STATUSES and (
+            user.is_superuser or user.has_role(roles.SACCO_OFFICIAL)
+        )
         if context["can_decide"]:
             context["decision_form"] = DecisionForm()
         context["history"] = LogEntry.objects.get_for_object(loan).select_related("actor").order_by("timestamp")
@@ -230,4 +235,51 @@ class DisbursementCreateView(RoleRequiredMixin, CreateView):
             form.instance.recorded_by = self.request.user
             form.save()
         messages.success(self.request, "Disbursement recorded. The loan has been paid out to the household.")
+        return redirect("loans:loan_detail", pk=self.loan.pk)
+
+
+class RepaymentCreateView(RoleRequiredMixin, CreateView):
+    """The SACCO records a repayment. The system then moves the loan to Repaying or Closed."""
+
+    form_class = RepaymentForm
+    allowed_roles = (roles.SACCO_OFFICIAL,)
+    template_name = "loans/repayment_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            self.loan = _get_scoped_loan(request, kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def refuse_unless_active(self):
+        if self.loan.status not in workflow.ACTIVE_STATUSES:
+            messages.warning(self.request, "Repayments can only be recorded on a loan that has been paid out and is not closed.")
+            return redirect("loans:loan_detail", pk=self.loan.pk)
+        return None
+
+    def get(self, request, *args, **kwargs):
+        return self.refuse_unless_active() or super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.refuse_unless_active() or super().post(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["loan"] = self.loan
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["loan"] = self.loan
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            form.instance.application = self.loan
+            form.instance.recorded_by = self.request.user
+            form.save()
+            workflow.after_repayment(self.loan)
+        if self.loan.status == Status.CLOSED:
+            messages.success(self.request, "Repayment recorded. The loan is now fully repaid and closed.")
+        else:
+            messages.success(self.request, f"Repayment recorded. UGX {self.loan.balance:,} is still owed.")
         return redirect("loans:loan_detail", pk=self.loan.pk)
