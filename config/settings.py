@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "loans",
     "feedback",
     "dashboards",
+    "ussd",
 ]
 
 MIDDLEWARE = [
