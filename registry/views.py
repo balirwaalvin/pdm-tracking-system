@@ -90,3 +90,32 @@ class HouseholdDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
             and self.object.verification == Household.Verification.PENDING
         )
         return context
+
+
+class HouseholdUpdateView(RoleRequiredMixin, ScopedQuerysetMixin, UpdateView):
+    """Edit a household. Changing the NIN, village or wealth rank sends it back to LC I."""
+
+    model = Household
+    form_class = HouseholdForm
+    allowed_roles = (roles.PARISH_CHIEF,)
+    unit_field = "village"
+    RECHECK_FIELDS = {"nin", "village", "wealth_rank"}
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        if self.RECHECK_FIELDS & set(form.changed_data):
+            household = form.instance
+            household.verification = Household.Verification.PENDING
+            household.verified_by = None
+            household.verified_at = None
+            household.verification_note = ""
+            messages.info(self.request, "Key details changed, so the household goes back to LC I for verification.")
+        messages.success(self.request, "Household updated.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("registry:household_detail", args=[self.object.pk])
