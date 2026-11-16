@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 
 
@@ -107,6 +108,82 @@ class EnterpriseGroup(models.Model):
     @property
     def member_count(self):
         return self.members.count()
+
+
+nin_validator = RegexValidator(
+    r"^[A-Z0-9]{14}$",
+    "A National Identification Number has 14 letters and digits, for example CM90012345ABCD.",
+)
+
+
+class Household(models.Model):
+    """A household profiled under PDM, identified by the NIN of its head."""
+
+    class Sex(models.TextChoices):
+        FEMALE = "F", "Female"
+        MALE = "M", "Male"
+
+    class AgeGroup(models.TextChoices):
+        YOUTH = "youth", "Youth (18 to 35)"
+        ADULT = "adult", "Adult (36 to 59)"
+        OLDER = "older", "Older person (60 and above)"
+
+    class WealthRank(models.TextChoices):
+        VERY_POOR = "very_poor", "Very poor"
+        POOR = "poor", "Poor"
+        MIDDLE = "middle", "Middle"
+        BETTER_OFF = "better_off", "Better off"
+
+    class Verification(models.TextChoices):
+        PENDING = "pending", "Waiting for LC I"
+        VERIFIED = "verified", "Verified"
+        REJECTED = "rejected", "Rejected"
+
+    head_name = models.CharField("Head of household", max_length=150)
+    nin = models.CharField("NIN", max_length=14, unique=True, validators=[nin_validator])
+    phone = models.CharField(max_length=15, blank=True, help_text="Format: 2567XXXXXXXX")
+    sex = models.CharField(max_length=1, choices=Sex.choices)
+    age_group = models.CharField(max_length=10, choices=AgeGroup.choices)
+    has_disability = models.BooleanField("Person with disability", default=False)
+    household_size = models.PositiveSmallIntegerField(default=1)
+    wealth_rank = models.CharField(max_length=12, choices=WealthRank.choices)
+    village = models.ForeignKey(
+        AdminUnit,
+        on_delete=models.PROTECT,
+        related_name="households",
+        limit_choices_to={"level": AdminUnit.Level.VILLAGE},
+    )
+    enterprise_group = models.ForeignKey(
+        EnterpriseGroup, null=True, blank=True, on_delete=models.SET_NULL, related_name="members"
+    )
+
+    verification = models.CharField(
+        max_length=10, choices=Verification.choices, default=Verification.PENDING
+    )
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+    verification_note = models.CharField(max_length=255, blank=True)
+
+    registered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["head_name"]
+
+    def __str__(self):
+        return f"{self.head_name} ({self.nin})"
+
+    def save(self, *args, **kwargs):
+        self.nin = self.nin.strip().upper()
+        super().save(*args, **kwargs)
+
+    @property
+    def parish(self):
+        return self.village.parent
 
 
 from auditlog.registry import auditlog  # noqa: E402
