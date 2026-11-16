@@ -21,7 +21,10 @@
           {% if user.is_authenticated and user.role != "Household" %}
             <li class="nav-item"><a class="nav-link" href="{% url 'registry:household_list' %}">Households</a></li>
             <li class="nav-item"><a class="nav-link" href="{% url 'registry:group_list' %}">Groups</a></li>
+            {% if user.role != "LC I Chairperson" %}
             <li class="nav-item"><a class="nav-link" href="{% url 'saccos:sacco_list' %}">SACCOs</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan_list' %}">Loans</a></li>
+            {% endif %}
           {% endif %}
           {% block nav_links %}{% endblock %}
         </ul>
