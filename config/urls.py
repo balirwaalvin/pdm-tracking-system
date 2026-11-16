@@ -7,5 +7,6 @@ admin.site.site_title = "PDM Tracking System"
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
+    path("registry/", include("registry.urls")),
     path("", include("dashboards.urls")),
 ]
