@@ -50,3 +50,43 @@ class LoanApplication(models.Model):
 
     def __str__(self):
         return f"Loan {self.pk}: {self.household.head_name}, UGX {self.amount:,}"
+
+
+class Appraisal(models.Model):
+    """The SACCO Loan Committee's assessment of an application, with scores and reasons."""
+
+    class Recommendation(models.TextChoices):
+        APPROVE = "approve", "Approve"
+        REJECT = "reject", "Reject"
+
+    SCORE_CHOICES = [(i, str(i)) for i in range(1, 6)]
+
+    application = models.OneToOneField(LoanApplication, on_delete=models.CASCADE, related_name="appraisal")
+    viability_score = models.PositiveSmallIntegerField(
+        "Business viability (1 to 5)", choices=SCORE_CHOICES
+    )
+    repayment_score = models.PositiveSmallIntegerField(
+        "Capacity to repay (1 to 5)", choices=SCORE_CHOICES
+    )
+    group_score = models.PositiveSmallIntegerField(
+        "Group's recommendation (1 to 5)", choices=SCORE_CHOICES
+    )
+    recommendation = models.CharField(max_length=10, choices=Recommendation.choices)
+    reasons = models.TextField(help_text="Why the committee recommends this. The applicant can see it.")
+    appraised_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    appraised_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def total_score(self):
+        return self.viability_score + self.repayment_score + self.group_score
+
+    def __str__(self):
+        return f"Appraisal of loan {self.application_id}: {self.total_score}/15"
+
+
+from auditlog.registry import auditlog  # noqa: E402
+
+auditlog.register(LoanApplication)
+auditlog.register(Appraisal)
