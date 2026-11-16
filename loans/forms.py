@@ -4,7 +4,7 @@ from django.utils import timezone
 from accounts.scoping import scope_queryset
 from registry.models import Household
 
-from .models import LOAN_CEILING, Appraisal, Disbursement, LoanApplication
+from .models import LOAN_CEILING, Appraisal, Disbursement, LoanApplication, Repayment
 
 OPEN_STATUSES = [
     LoanApplication.Status.DRAFT,
@@ -141,4 +141,38 @@ class DisbursementForm(forms.ModelForm):
         decided = self.loan.decided_at
         if decided and day < timezone.localtime(decided).date():
             raise forms.ValidationError("The payment date cannot be before the loan was approved.")
+        return day
+
+
+class RepaymentForm(forms.ModelForm):
+    """The SACCO records money a household paid back. No overpayment, no future dates."""
+
+    class Meta:
+        model = Repayment
+        fields = ["amount", "paid_on", "method", "reference"]
+        widgets = {"paid_on": forms.DateInput(attrs={"type": "date"})}
+
+    def __init__(self, *args, loan, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loan = loan
+        if not self.is_bound:
+            self.initial.setdefault("paid_on", timezone.localdate())
+        self.fields["amount"].help_text = f"Balance still owed: UGX {loan.balance:,}."
+
+    def clean_amount(self):
+        amount = self.cleaned_data["amount"]
+        if amount <= 0:
+            raise forms.ValidationError("Enter the amount repaid.")
+        if amount > self.loan.balance:
+            raise forms.ValidationError(
+                f"This is more than the UGX {self.loan.balance:,} still owed."
+            )
+        return amount
+
+    def clean_paid_on(self):
+        day = self.cleaned_data["paid_on"]
+        if day > timezone.localdate():
+            raise forms.ValidationError("The payment date cannot be in the future.")
+        if day < self.loan.disbursement.disbursed_on:
+            raise forms.ValidationError("The payment date cannot be before the loan was paid out.")
         return day
