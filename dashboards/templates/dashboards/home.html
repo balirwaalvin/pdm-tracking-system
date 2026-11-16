@@ -7,12 +7,38 @@
     <h1 class="display-6 fw-bold">One shared record for every PDM stakeholder</h1>
     <p class="lead text-muted">Follow households, enterprise groups, SACCOs, Parish Revolving Fund loans and reports from the village to the ministry.</p>
     {% if user.is_authenticated %}
-      <p>You are signed in as <strong>{{ user }}</strong>.</p>
+      <div class="card shadow-sm mt-3">
+        <div class="card-body">
+          <p class="mb-1"><strong>{{ user }}</strong> · {{ user.role|default:"No role yet" }}</p>
+          <p class="text-muted mb-0">
+            Your area:
+            {% if area_path %}
+              {% for unit in area_path reversed %}{{ unit.name }}{% if not forloop.last %} › {% endif %}{% endfor %}
+            {% else %}
+              Whole country
+            {% endif %}
+          </p>
+        </div>
+      </div>
     {% else %}
       <a class="btn btn-pdm btn-lg" href="{% url 'login' %}">Sign in</a>
     {% endif %}
   </div>
   <div class="col-lg-5 mt-4 mt-lg-0">
+    {% if user.is_authenticated %}
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h6 text-uppercase text-muted">Units you can see ({{ visible_count }})</h2>
+        <ul class="list-unstyled mb-0">
+          {% for unit in visible_units %}
+            <li><span class="badge text-bg-light border">{{ unit.get_level_display }}</span> {{ unit.name }}</li>
+          {% empty %}
+            <li class="text-muted">No units assigned yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% else %}
     <div class="card shadow-sm">
       <div class="card-body">
         <h2 class="h6 text-uppercase text-muted">What the system tracks</h2>
@@ -25,6 +51,7 @@
         </ul>
       </div>
     </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
