@@ -91,3 +91,10 @@ class FundRelease(models.Model):
     @property
     def is_confirmed(self):
         return self.confirmed_at is not None
+
+
+from auditlog.registry import auditlog  # noqa: E402
+
+auditlog.register(Sacco)
+auditlog.register(SaccoChecklistItem)
+auditlog.register(FundRelease)
