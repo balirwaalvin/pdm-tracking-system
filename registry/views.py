@@ -48,3 +48,24 @@ class HouseholdListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
         context["statuses"] = Household.Verification.choices
         context["can_register"] = self.request.user.has_role(roles.PARISH_CHIEF)
         return context
+
+
+class HouseholdCreateView(RoleRequiredMixin, CreateView):
+    """The Parish Chief registers a household; it then waits for LC I verification."""
+
+    model = Household
+    form_class = HouseholdForm
+    allowed_roles = (roles.PARISH_CHIEF,)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.registered_by = self.request.user
+        messages.success(self.request, "Household registered. It now waits for the LC I Chairperson to verify it.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("registry:household_detail", args=[self.object.pk])

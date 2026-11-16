@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{% if object %}Edit household{% else %}Register a household{% endif %} · PDM Tracking System{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <h1 class="h3 mb-3">{% if object %}Edit {{ object.head_name }}{% else %}Register a household{% endif %}</h1>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {{ form|crispy }}
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-pdm">Save</button>
+            <a class="btn btn-outline-secondary" href="{% if object %}{% url 'registry:household_detail' object.pk %}{% else %}{% url 'registry:household_list' %}{% endif %}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
