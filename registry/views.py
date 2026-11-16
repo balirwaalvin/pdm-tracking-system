@@ -69,3 +69,24 @@ class HouseholdCreateView(RoleRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse("registry:household_detail", args=[self.object.pk])
+
+
+class HouseholdDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
+    model = Household
+    allowed_roles = HOUSEHOLD_VIEW_ROLES
+    unit_field = "village"
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "village", "village__parent", "enterprise_group", "verified_by", "registered_by"
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context["can_edit"] = user.has_role(roles.PARISH_CHIEF)
+        context["can_verify"] = (
+            user.has_role(roles.LC1_CHAIRPERSON)
+            and self.object.verification == Household.Verification.PENDING
+        )
+        return context
