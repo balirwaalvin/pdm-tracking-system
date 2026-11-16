@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "registry",
     "saccos",
     "loans",
+    "feedback",
 ]
 
 MIDDLEWARE = [
