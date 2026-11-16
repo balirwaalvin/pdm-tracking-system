@@ -22,10 +22,10 @@ Day 1 was Tue 17 Nov 2026; Day 10 is Thu 26 Nov 2026; the buffer runs to Mon 30 
 
 ## Day 6: repayment
 
-- [ ] Repayment schedule at 6% a year over `term_months`. Show the instalments on the loan page.
-- [ ] Record repayments, which moves the loan DISBURSED → REPAYING → CLOSED through SYSTEM changes. Add an arrears list.
-- [ ] 90-day default flag: a management command, such as `flag_defaults`, that moves loans to DEFAULTED.
-- [ ] Tests for interest, the schedule and default.
+- [x] Repayment schedule at 6% a year over `term_months`. Show the instalments on the loan page.
+- [x] Record repayments, which moves the loan DISBURSED → REPAYING → CLOSED through SYSTEM changes. Add an arrears list.
+- [x] 90-day default flag: a management command, such as `flag_defaults`, that moves loans to DEFAULTED.
+- [x] Tests for interest, the schedule and default.
 
 ## Day 7: USSD and SMS (Africa's Talking sandbox)
 

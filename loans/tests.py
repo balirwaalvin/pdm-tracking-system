@@ -1,6 +1,8 @@
 import datetime
 
 from django.core.exceptions import PermissionDenied
+from io import StringIO
+
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
@@ -10,7 +12,8 @@ from accounts.models import User
 from registry.models import Household
 
 from . import workflow
-from .models import Disbursement, LoanApplication
+from .models import Disbursement, LoanApplication, Repayment
+from .schedule import add_months, build_schedule, total_interest
 
 Status = LoanApplication.Status
 
@@ -327,3 +330,193 @@ class WorkflowEndToEndTests(TestCase):
         workflow.move(grace_loan, Status.APPROVED, User.objects.get(username="sacco"))
         with self.assertRaises(PermissionDenied):
             workflow.move(grace_loan, Status.DISBURSED, User.objects.get(username="district"))
+
+
+class ScheduleTests(TestCase):
+    """6% a year, flat, shared equally over the term; whole shillings."""
+
+    def test_interest_is_six_percent_a_year(self):
+        self.assertEqual(total_interest(1_000_000, 12), 60_000)
+        self.assertEqual(total_interest(1_000_000, 6), 30_000)
+        self.assertEqual(total_interest(500_000, 24), 60_000)
+
+    def test_schedule_adds_up_to_principal_plus_interest(self):
+        schedule = build_schedule(800_000, 12, datetime.date(2026, 1, 15))
+        self.assertEqual(len(schedule), 12)
+        self.assertEqual(sum(i.principal for i in schedule), 800_000)
+        self.assertEqual(sum(i.interest for i in schedule), 48_000)
+        self.assertEqual(schedule[0].amount, 66_666 + 4_000)
+        self.assertEqual(schedule[-1].balance_after, 0)
+
+    def test_rounding_goes_to_the_last_instalment(self):
+        schedule = build_schedule(100_000, 7, datetime.date(2026, 1, 1))
+        self.assertEqual(sum(i.amount for i in schedule), 100_000 + total_interest(100_000, 7))
+        self.assertEqual(len({i.amount for i in schedule[:-1]}), 1)
+
+    def test_instalments_fall_due_monthly(self):
+        schedule = build_schedule(300_000, 3, datetime.date(2026, 1, 31))
+        self.assertEqual(
+            [i.due_date for i in schedule],
+            [datetime.date(2026, 2, 28), datetime.date(2026, 3, 31), datetime.date(2026, 4, 30)],
+        )
+
+    def test_add_months_crosses_the_year(self):
+        self.assertEqual(add_months(datetime.date(2026, 11, 30), 3), datetime.date(2027, 2, 28))
+
+
+class RepaymentTests(TestCase):
+    """Repayments move a loan to Repaying and then Closed; overdue loans show in arrears."""
+
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.sacco_user = User.objects.get(username="sacco")
+        # Grace's loan, paid out 100 days ago: 3 instalments of 70,666 have fallen due.
+        self.loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
+        workflow.move(self.loan, Status.APPROVED, self.sacco_user)
+        workflow.move(self.loan, Status.DISBURSED, self.sacco_user)
+        self.paid_out_on = timezone.localdate() - datetime.timedelta(days=100)
+        Disbursement.objects.create(
+            application=self.loan, amount=800_000, disbursed_on=self.paid_out_on,
+            method=Disbursement.Method.MOBILE, reference="T1", recorded_by=self.sacco_user,
+        )
+
+    def repay(self, amount, username="sacco", **overrides):
+        self.client.force_login(User.objects.get(username=username))
+        data = {"amount": amount, "paid_on": timezone.localdate().isoformat(), "method": "mobile", "reference": "R1"}
+        data.update(overrides)
+        return self.client.post(reverse("loans:loan_repay", args=[self.loan.pk]), data)
+
+    def test_totals_before_any_repayment(self):
+        self.assertEqual(self.loan.total_due, 848_000)
+        self.assertEqual(self.loan.balance, 848_000)
+        self.assertEqual(self.loan.arrears(), self.loan.amount_due_by(timezone.localdate()))
+        first_due = add_months(self.paid_out_on, 1)
+        self.assertEqual(self.loan.days_in_arrears(), (timezone.localdate() - first_due).days)
+
+    def test_first_repayment_moves_the_loan_to_repaying(self):
+        self.repay(70_666)
+        self.loan.refresh_from_db()
+        self.assertEqual(self.loan.status, Status.REPAYING)
+        self.assertEqual(self.loan.total_repaid, 70_666)
+        self.assertEqual(Repayment.objects.get(application=self.loan).recorded_by, self.sacco_user)
+
+    def test_repaying_in_full_closes_the_loan(self):
+        self.repay(848_000)
+        self.loan.refresh_from_db()
+        self.assertEqual(self.loan.status, Status.CLOSED)
+        self.assertEqual(self.loan.balance, 0)
+        self.assertEqual(self.loan.arrears(), 0)
+
+    def test_overpayment_is_refused(self):
+        response = self.repay(900_000)
+        self.assertContains(response, "more than the UGX 848,000 still owed")
+        self.assertFalse(self.loan.repayments.exists())
+
+    def test_payment_before_the_loan_was_paid_out_is_refused(self):
+        response = self.repay(10_000, paid_on=(self.paid_out_on - datetime.timedelta(days=1)).isoformat())
+        self.assertContains(response, "before the loan was paid out")
+
+    def test_other_roles_cannot_record_repayments(self):
+        for username in ("groupexec", "household", "pdc", "district", "auditor"):
+            self.assertEqual(self.repay(10_000, username=username).status_code, 403, username)
+        self.assertFalse(self.loan.repayments.exists())
+
+    def test_closed_loan_takes_no_more_repayments(self):
+        self.repay(848_000)
+        response = self.repay(1_000, reference="R2")
+        self.assertRedirects(response, reverse("loans:loan_detail", args=[self.loan.pk]))
+        self.assertEqual(self.loan.repayments.count(), 1)
+
+    def test_partly_paid_instalments_still_count_as_arrears(self):
+        self.repay(100_000)
+        self.loan.refresh_from_db()
+        due = self.loan.amount_due_by(timezone.localdate())
+        self.assertEqual(self.loan.arrears(), due - 100_000)
+        second_due = add_months(self.paid_out_on, 2)
+        self.assertEqual(self.loan.days_in_arrears(), (timezone.localdate() - second_due).days)
+
+    def test_schedule_marks_paid_and_overdue_instalments(self):
+        self.repay(70_666)
+        states = [row["state"] for row in self.loan.schedule_with_status()]
+        self.assertEqual(states[:3], ["paid", "overdue", "overdue"])
+        self.assertEqual(states[-1], "due")
+
+    def test_loan_page_shows_the_schedule(self):
+        self.client.force_login(User.objects.get(username="pdc"))
+        response = self.client.get(reverse("loans:loan_detail", args=[self.loan.pk]))
+        self.assertContains(response, "Repayment schedule")
+        self.assertContains(response, "848,000")
+        self.assertNotContains(response, "Record repayment")
+
+    def test_arrears_page_lists_overdue_loans(self):
+        self.client.force_login(User.objects.get(username="subcounty"))
+        response = self.client.get(reverse("loans:arrears_list"))
+        self.assertContains(response, "Grace Nakato")
+        self.repay(848_000)
+        response = self.client.get(reverse("loans:arrears_list"))
+        self.assertNotContains(response, "Grace Nakato")
+
+    def test_arrears_page_is_scoped_to_the_users_area(self):
+        nantabulirwa_user = User.objects.get(username="sacco")
+        nantabulirwa_user.admin_unit = self.loan.sacco.parish.parent.children.exclude(pk=self.loan.sacco.parish.pk).get()
+        nantabulirwa_user.save()
+        self.client.force_login(nantabulirwa_user)
+        self.assertNotContains(self.client.get(reverse("loans:arrears_list")), "Grace Nakato")
+
+
+class DefaultTests(TestCase):
+    """A loan with an instalment 90 or more days overdue is flagged as defaulted by the system."""
+
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        sacco = User.objects.get(username="sacco")
+        self.loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
+        workflow.move(self.loan, Status.APPROVED, sacco)
+        workflow.move(self.loan, Status.DISBURSED, sacco)
+        self.paid_out_on = datetime.date(2026, 1, 10)  # first instalment due 10 Feb 2026
+        Disbursement.objects.create(
+            application=self.loan, amount=800_000, disbursed_on=self.paid_out_on,
+            method=Disbursement.Method.BANK, reference="T1", recorded_by=sacco,
+        )
+
+    def flag(self, day):
+        out = StringIO()
+        call_command("flag_defaults", "--as-of", day.isoformat(), stdout=out)
+        self.loan.refresh_from_db()
+        return out.getvalue()
+
+    def test_89_days_overdue_is_not_a_default(self):
+        self.flag(datetime.date(2026, 2, 10) + datetime.timedelta(days=89))
+        self.assertEqual(self.loan.status, Status.DISBURSED)
+
+    def test_90_days_overdue_is_a_default(self):
+        output = self.flag(datetime.date(2026, 2, 10) + datetime.timedelta(days=90))
+        self.assertEqual(self.loan.status, Status.DEFAULTED)
+        self.assertIn("Grace Nakato", output)
+
+    def test_up_to_date_loan_is_not_flagged(self):
+        Repayment.objects.create(
+            application=self.loan, amount=70_666 * 3, paid_on=datetime.date(2026, 4, 10),
+            method=Repayment.Method.CASH, reference="R1",
+        )
+        self.flag(datetime.date(2026, 5, 9))
+        self.assertEqual(self.loan.status, Status.DISBURSED)
+
+    def test_defaulted_loan_closes_when_repaid_in_full(self):
+        self.flag(datetime.date(2026, 12, 1))
+        Repayment.objects.create(
+            application=self.loan, amount=848_000, paid_on=datetime.date(2026, 11, 1),
+            method=Repayment.Method.CASH, reference="R1",
+        )
+        workflow.after_repayment(self.loan)
+        self.assertEqual(self.loan.status, Status.CLOSED)
+
+    def test_people_cannot_flag_a_default(self):
+        with self.assertRaises(PermissionDenied):
+            workflow.move(self.loan, Status.DEFAULTED, User.objects.get(username="sacco"))
