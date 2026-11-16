@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "accounts",
     "registry",
     "saccos",
+    "loans",
 ]
 
 MIDDLEWARE = [
