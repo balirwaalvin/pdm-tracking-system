@@ -1,0 +1,17 @@
+/* PDM Tracking System: UCU-inspired colours */
+:root {
+  --pdm-navy: #0b2e6b;
+  --pdm-blue: #0c549c;
+  --pdm-crimson: #cc0a5a;
+  --pdm-gold: #f2b705;
+  --pdm-light: #f6f8fc;
+}
+body { background: var(--pdm-light); }
+.navbar-pdm { background: var(--pdm-navy); border-bottom: 4px solid var(--pdm-gold); }
+.navbar-pdm .navbar-brand, .navbar-pdm .nav-link { color: #fff; }
+.navbar-pdm .nav-link:hover { color: var(--pdm-gold); }
+.btn-pdm { background: var(--pdm-blue); color: #fff; }
+.btn-pdm:hover { background: var(--pdm-navy); color: #fff; }
+.text-crimson { color: var(--pdm-crimson); }
+.card-stat .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--pdm-navy); }
+.prototype-banner { background: var(--pdm-gold); color: #14213d; font-size: .85rem; }
