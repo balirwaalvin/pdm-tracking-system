@@ -86,7 +86,37 @@ class Appraisal(models.Model):
         return f"Appraisal of loan {self.application_id}: {self.total_score}/15"
 
 
+class Disbursement(models.Model):
+    """The SACCO paying an approved loan out to the household. One per loan."""
+
+    class Method(models.TextChoices):
+        BANK = "bank", "Bank transfer"
+        MOBILE = "mobile", "Mobile money"
+        CHEQUE = "cheque", "Cheque"
+
+    application = models.OneToOneField(
+        LoanApplication, on_delete=models.PROTECT, related_name="disbursement"
+    )
+    amount = models.PositiveIntegerField("Amount paid out (UGX)")
+    disbursed_on = models.DateField("Date paid out")
+    method = models.CharField(max_length=10, choices=Method.choices)
+    reference = models.CharField(
+        max_length=60, help_text="Bank, cheque or mobile money transaction reference"
+    )
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-disbursed_on"]
+
+    def __str__(self):
+        return f"UGX {self.amount:,} paid on loan {self.application_id} on {self.disbursed_on}"
+
+
 from auditlog.registry import auditlog  # noqa: E402
 
 auditlog.register(LoanApplication)
 auditlog.register(Appraisal)
+auditlog.register(Disbursement)

@@ -57,6 +57,16 @@ class Sacco(models.Model):
         """Confirmed fund releases, in Uganda shillings."""
         return self.releases.exclude(confirmed_at=None).aggregate(total=models.Sum("amount"))["total"] or 0
 
+    @property
+    def total_disbursed(self):
+        """Loans this SACCO has paid out, in Uganda shillings."""
+        return self.loans.aggregate(total=models.Sum("disbursement__amount"))["total"] or 0
+
+    @property
+    def funds_available(self):
+        """Confirmed releases not yet lent out."""
+        return self.total_released - self.total_disbursed
+
 
 # Requirements a PDM SACCO must meet before it receives the fund.
 DEFAULT_CHECKLIST = [
