@@ -8,7 +8,17 @@ Every PDM stakeholder (households, LC I chairpersons, Parish Chiefs, Parish Deve
 
 ## Status
 
-Under active development: a functional prototype within 10 days.
+Under active development: a functional prototype within 10 days. See [docs/PROGRESS.md](docs/PROGRESS.md) for the day-by-day checklist.
+
+## Features so far
+
+- **Registry:** the Parish Chief profiles households (NIN checked, wealth rank recorded); the LC I chairperson verifies or rejects them, with a reason for every rejection.
+- **Enterprise groups:** the sub-county CDO registers groups and links them to the parish PDM SACCO.
+- **SACCOs:** a seven-point eligibility checklist; the national office records fund releases and the district confirms them.
+- **Loans:** the group executive applies (up to UGX 1,000,000, verified members only); the SACCO appraises, approves or rejects with reasons, and records the disbursement. A payout cannot exceed the approved amount or the SACCO's confirmed funds.
+- **Audit trail:** every change is logged with who made it and when.
+
+Every page checks the user's role and shows only records in the user's own area.
 
 ## Run it locally
 
@@ -45,6 +55,8 @@ Open http://127.0.0.1:8000.
 | `national` | PDM Secretariat and MoFPED | Whole country |
 | `auditor` | Auditor | Whole country |
 | `admin` | Administrator (Django admin) | Whole country |
+
+The seed also adds 12 sample households, 3 enterprise groups, 2 SACCOs (Seeta is eligible; Nantabulirwa still lacks its Supervisory Board) and a loan at each stage: submitted, appraised, approved, rejected and disbursed.
 
 These are sample people and places for demonstration only.
 
