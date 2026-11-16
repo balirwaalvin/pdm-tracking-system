@@ -14,7 +14,9 @@ from django.db import transaction
 
 from accounts import roles
 from accounts.models import User
-from registry.models import AdminUnit
+from django.utils import timezone
+
+from registry.models import AdminUnit, EnterpriseGroup, Household
 
 Level = AdminUnit.Level
 
@@ -43,6 +45,27 @@ DEMO_USERS = [
 ]
 
 
+# name, enterprise, parish, registration number
+GROUPS = [
+    ("Seeta Poultry Farmers", EnterpriseGroup.Enterprise.POULTRY, "Seeta", "GOMA/EG/001"),
+    ("Kitega Piggery Group", EnterpriseGroup.Enterprise.PIGGERY, "Seeta", "GOMA/EG/002"),
+    ("Nantabulirwa Coffee Growers", EnterpriseGroup.Enterprise.COFFEE, "Nantabulirwa", "GOMA/EG/003"),
+]
+
+# head, NIN, phone, sex, age group, disability, size, wealth rank, village, group, verified?
+HOUSEHOLDS = [
+    ("Grace Nakato", "CF85001234ABCD", "256700000001", "F", "adult", False, 6, "very_poor", "Seeta Central", "Seeta Poultry Farmers", True),
+    ("Isaac Mugisha", "CM92004567EFGH", "256700000011", "M", "youth", False, 3, "poor", "Seeta Central", "Seeta Poultry Farmers", True),
+    ("Florence Atim", "CF70007890IJKL", "256700000012", "F", "older", True, 5, "very_poor", "Seeta Central", "Seeta Poultry Farmers", False),
+    ("John Ssemwogerere", "CM88001122MNOP", "256700000013", "M", "adult", False, 7, "poor", "Kitega", "Kitega Piggery Group", False),
+    ("Harriet Nansubuga", "CF95003344QRST", "256700000014", "F", "youth", False, 2, "poor", "Kitega", "Kitega Piggery Group", False),
+    ("Robert Okot", "CM79005566UVWX", "256700000015", "M", "adult", True, 8, "very_poor", "Bajjo", "Kitega Piggery Group", False),
+    ("Betty Namuddu", "CF83007788YZAB", "256700000016", "F", "adult", False, 4, "middle", "Bajjo", None, False),
+    ("Paul Kizza", "CM90009900CDEF", "256700000017", "M", "youth", False, 3, "poor", "Nantabulirwa A", "Nantabulirwa Coffee Growers", False),
+    ("Annet Nakiyimba", "CF76001357GHIJ", "256700000018", "F", "older", False, 6, "very_poor", "Nantabulirwa B", "Nantabulirwa Coffee Growers", False),
+]
+
+
 class Command(BaseCommand):
     help = "Create a sample parish and one demo user for each of the ten PDM roles."
 
@@ -53,6 +76,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         units = self.create_units()
         self.create_users(units, options["password"])
+        self.create_groups_and_households(units)
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
 
     def create_units(self):
@@ -102,3 +126,39 @@ class Command(BaseCommand):
             admin.set_password(password)
             admin.save()
         self.stdout.write(f"  {len(DEMO_USERS)} role users and an admin (password: {password})")
+
+    def create_groups_and_households(self, units):
+        parish_chief = User.objects.get(username="parishchief")
+        subcounty = User.objects.get(username="subcounty")
+        lc1 = User.objects.get(username="lc1")
+        groups = {}
+        for name, enterprise, parish, reg_no in GROUPS:
+            group, _ = EnterpriseGroup.objects.update_or_create(
+                parish=units[parish],
+                name=name,
+                defaults={"enterprise": enterprise, "registration_number": reg_no, "registered_by": subcounty},
+            )
+            groups[name] = group
+
+        for head, nin, phone, sex, age, disability, size, rank, village, group, verified in HOUSEHOLDS:
+            defaults = {
+                "head_name": head,
+                "phone": phone,
+                "sex": sex,
+                "age_group": age,
+                "has_disability": disability,
+                "household_size": size,
+                "wealth_rank": rank,
+                "village": units[village],
+                "enterprise_group": groups.get(group),
+                "registered_by": parish_chief,
+            }
+            if verified:
+                defaults.update(
+                    verification=Household.Verification.VERIFIED,
+                    verified_by=lc1,
+                    verified_at=timezone.now(),
+                    verification_note="Known to the village; lives here.",
+                )
+            Household.objects.update_or_create(nin=nin, defaults=defaults)
+        self.stdout.write(f"  {len(GROUPS)} enterprise groups and {len(HOUSEHOLDS)} households")
