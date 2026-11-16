@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "saccos",
     "loans",
     "feedback",
+    "dashboards",
 ]
 
 MIDDLEWARE = [
