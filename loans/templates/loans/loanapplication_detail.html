@@ -47,6 +47,18 @@
         </form>
       {% endif %}
     </div></div>
+
+    {% if disbursement or can_disburse %}
+    <div class="card shadow-sm mt-3"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Disbursement</h2>
+      {% if disbursement %}
+        <p class="mb-1">UGX <strong>{{ disbursement.amount|intcomma }}</strong> paid on {{ disbursement.disbursed_on|date:"j M Y" }} by {{ disbursement.get_method_display|lower }}</p>
+        <p class="small text-muted mb-0">Reference {{ disbursement.reference }} · recorded by {{ disbursement.recorded_by }}</p>
+      {% else %}
+        <a class="btn btn-pdm" href="{% url 'loans:loan_disburse' loan.pk %}">Record disbursement</a>
+      {% endif %}
+    </div></div>
+    {% endif %}
   </div>
   <div class="col-lg-5">
     <div class="card shadow-sm"><div class="card-body">
