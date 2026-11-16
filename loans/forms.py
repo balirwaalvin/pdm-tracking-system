@@ -1,9 +1,10 @@
 from django import forms
+from django.utils import timezone
 
 from accounts.scoping import scope_queryset
 from registry.models import Household
 
-from .models import LOAN_CEILING, Appraisal, LoanApplication
+from .models import LOAN_CEILING, Appraisal, Disbursement, LoanApplication
 
 OPEN_STATUSES = [
     LoanApplication.Status.DRAFT,
@@ -93,3 +94,51 @@ class DecisionForm(forms.Form):
         if cleaned.get("decision") == self.REJECT and not cleaned.get("reason", "").strip():
             self.add_error("reason", "Give the reason for rejecting this application.")
         return cleaned
+
+
+class DisbursementForm(forms.ModelForm):
+    """The SACCO records paying out an approved loan.
+
+    The amount cannot be more than was approved, nor more than the SACCO
+    still holds from its confirmed fund releases.
+    """
+
+    class Meta:
+        model = Disbursement
+        fields = ["amount", "disbursed_on", "method", "reference"]
+        widgets = {"disbursed_on": forms.DateInput(attrs={"type": "date"})}
+
+    def __init__(self, *args, loan, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loan = loan
+        if not self.is_bound:
+            self.initial.setdefault("amount", loan.amount)
+            self.initial.setdefault("disbursed_on", timezone.localdate())
+        self.fields["amount"].help_text = (
+            f"Approved: UGX {loan.amount:,}. The SACCO holds UGX {loan.sacco.funds_available:,} "
+            "from confirmed fund releases."
+        )
+
+    def clean_amount(self):
+        amount = self.cleaned_data["amount"]
+        if amount <= 0:
+            raise forms.ValidationError("Enter the amount paid out.")
+        if amount > self.loan.amount:
+            raise forms.ValidationError(
+                f"You cannot pay out more than the approved UGX {self.loan.amount:,}."
+            )
+        available = self.loan.sacco.funds_available
+        if amount > available:
+            raise forms.ValidationError(
+                f"The SACCO only holds UGX {available:,} from confirmed fund releases."
+            )
+        return amount
+
+    def clean_disbursed_on(self):
+        day = self.cleaned_data["disbursed_on"]
+        if day > timezone.localdate():
+            raise forms.ValidationError("The payment date cannot be in the future.")
+        decided = self.loan.decided_at
+        if decided and day < timezone.localtime(decided).date():
+            raise forms.ValidationError("The payment date cannot be before the loan was approved.")
+        return day
