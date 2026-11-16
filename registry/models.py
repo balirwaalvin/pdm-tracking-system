@@ -64,3 +64,8 @@ class AdminUnit(models.Model):
             chain.append(unit)
             unit = unit.parent
         return chain
+
+
+from auditlog.registry import auditlog  # noqa: E402
+
+auditlog.register(AdminUnit)

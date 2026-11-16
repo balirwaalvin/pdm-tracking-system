@@ -44,3 +44,8 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.get_full_name() or self.username
+
+
+from auditlog.registry import auditlog  # noqa: E402
+
+auditlog.register(User, exclude_fields=["password", "last_login"])
