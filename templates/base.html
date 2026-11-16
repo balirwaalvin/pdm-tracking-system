@@ -23,7 +23,12 @@
         <ul class="navbar-nav">
           {% if user.is_authenticated %}
             <li class="nav-item"><span class="nav-link">{{ user }}{% if user.role %} · {{ user.role }}{% endif %}</span></li>
-            {% block logout_link %}{% endblock %}
+            <li class="nav-item">
+              <form method="post" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link nav-link">Sign out</button>
+              </form>
+            </li>
           {% endif %}
         </ul>
       </div>
