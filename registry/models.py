@@ -189,3 +189,5 @@ class Household(models.Model):
 from auditlog.registry import auditlog  # noqa: E402
 
 auditlog.register(AdminUnit)
+auditlog.register(EnterpriseGroup)
+auditlog.register(Household)
