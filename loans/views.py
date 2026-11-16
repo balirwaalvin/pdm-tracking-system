@@ -96,3 +96,22 @@ class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         context["can_appraise"] = workflow.can_move(loan, Status.APPRAISED, user)
         context["history"] = LogEntry.objects.get_for_object(loan).select_related("actor").order_by("timestamp")
         return context
+
+
+def _get_scoped_loan(request, pk):
+    loan = get_object_or_404(LoanApplication.objects.select_related("household__village"), pk=pk)
+    check_unit_in_scope(request.user, loan.household.village)
+    return loan
+
+
+@require_POST
+@role_required(roles.GROUP_EXECUTIVE)
+def submit_loan(request, pk):
+    loan = _get_scoped_loan(request, pk)
+    try:
+        workflow.move(loan, Status.SUBMITTED, request.user)
+    except workflow.TransitionError as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(request, "Application submitted. The SACCO Loan Committee will appraise it.")
+    return redirect("loans:loan_detail", pk=pk)
