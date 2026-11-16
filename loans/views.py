@@ -12,7 +12,7 @@ from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_require
 from accounts.scoping import check_unit_in_scope, scope_queryset
 
 from . import workflow
-from .forms import AppraisalForm, LoanApplicationForm
+from .forms import AppraisalForm, DecisionForm, LoanApplicationForm
 from .models import LoanApplication
 
 Status = LoanApplication.Status
@@ -94,6 +94,9 @@ class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         context["appraisal"] = getattr(loan, "appraisal", None)
         context["can_submit"] = workflow.can_move(loan, Status.SUBMITTED, user)
         context["can_appraise"] = workflow.can_move(loan, Status.APPRAISED, user)
+        context["can_decide"] = workflow.can_move(loan, Status.APPROVED, user)
+        if context["can_decide"]:
+            context["decision_form"] = DecisionForm()
         context["history"] = LogEntry.objects.get_for_object(loan).select_related("actor").order_by("timestamp")
         return context
 
@@ -151,3 +154,29 @@ class AppraisalCreateView(RoleRequiredMixin, CreateView):
         form.save()
         messages.success(self.request, "Appraisal saved. The SACCO Board can now decide.")
         return redirect("loans:loan_detail", pk=self.loan.pk)
+
+
+@require_POST
+@role_required(roles.SACCO_OFFICIAL)
+def decide_loan(request, pk):
+    """The SACCO approves or rejects an appraised application. A rejection must give a reason."""
+    loan = _get_scoped_loan(request, pk)
+    form = DecisionForm(request.POST)
+    if not form.is_valid():
+        for errors in form.errors.values():
+            for error in errors:
+                messages.error(request, error)
+        return redirect("loans:loan_detail", pk=pk)
+
+    approve = form.cleaned_data["decision"] == DecisionForm.APPROVE
+    target = Status.APPROVED if approve else Status.REJECTED
+    try:
+        workflow.move(loan, target, request.user, reason=form.cleaned_data["reason"].strip())
+    except workflow.TransitionError as error:
+        messages.error(request, str(error))
+    else:
+        if approve:
+            messages.success(request, "Loan approved. Record the disbursement when the money is paid out.")
+        else:
+            messages.success(request, "Loan rejected. The reason is kept on the record.")
+    return redirect("loans:loan_detail", pk=pk)
