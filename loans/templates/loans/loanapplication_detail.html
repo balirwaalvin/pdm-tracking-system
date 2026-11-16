@@ -59,6 +59,37 @@
       {% endif %}
     </div></div>
     {% endif %}
+
+    {% if schedule %}
+    <div class="card shadow-sm mt-3"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <h2 class="h6 text-uppercase text-muted">Repayment schedule</h2>
+        {% if can_repay %}<a class="btn btn-sm btn-pdm" href="{% url 'loans:loan_repay' loan.pk %}">Record repayment</a>{% endif %}
+      </div>
+      <p class="small mb-2">6% a year, flat, over {{ loan.term_months }} months. Total due UGX <strong>{{ loan.total_due|intcomma }}</strong> · repaid UGX <strong>{{ loan.total_repaid|intcomma }}</strong> · balance UGX <strong>{{ loan.balance|intcomma }}</strong>
+        {% with arrears=loan.arrears %}{% if arrears %}<br><span class="text-danger">In arrears: UGX {{ arrears|intcomma }}, {{ loan.days_in_arrears }} days overdue</span>{% endif %}{% endwith %}</p>
+      <div class="table-responsive"><table class="table table-sm small mb-0">
+        <thead><tr><th>#</th><th>Due</th><th class="text-end">Principal</th><th class="text-end">Interest</th><th class="text-end">Instalment</th><th class="text-end">Paid</th><th></th></tr></thead>
+        <tbody>
+        {% for row in schedule %}
+          <tr><td>{{ row.instalment.number }}</td><td>{{ row.instalment.due_date|date:"j M Y" }}</td>
+            <td class="text-end">{{ row.instalment.principal|intcomma }}</td><td class="text-end">{{ row.instalment.interest|intcomma }}</td>
+            <td class="text-end">{{ row.instalment.amount|intcomma }}</td><td class="text-end">{{ row.paid|intcomma }}</td>
+            <td>{% if row.state == "paid" %}<span class="badge text-bg-success">Paid</span>{% elif row.state == "overdue" %}<span class="badge text-bg-danger">Overdue</span>{% else %}<span class="badge text-bg-light">Due</span>{% endif %}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </div></div>
+
+    <div class="card shadow-sm mt-3"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Repayments</h2>
+      <ul class="list-unstyled small mb-0">
+        {% for repayment in repayments %}
+          <li class="mb-1">{{ repayment.paid_on|date:"j M Y" }} · UGX <strong>{{ repayment.amount|intcomma }}</strong> by {{ repayment.get_method_display|lower }} · ref. {{ repayment.reference }} · recorded by {{ repayment.recorded_by }}</li>
+        {% empty %}<li class="text-muted">No repayments yet.</li>{% endfor %}
+      </ul>
+    </div></div>
+    {% endif %}
   </div>
   <div class="col-lg-5">
     <div class="card shadow-sm"><div class="card-body">
