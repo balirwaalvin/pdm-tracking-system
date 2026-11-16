@@ -115,3 +115,39 @@ def submit_loan(request, pk):
     else:
         messages.success(request, "Application submitted. The SACCO Loan Committee will appraise it.")
     return redirect("loans:loan_detail", pk=pk)
+
+
+class AppraisalCreateView(RoleRequiredMixin, CreateView):
+    """The SACCO Loan Committee scores a submitted application and gives reasons."""
+
+    form_class = AppraisalForm
+    allowed_roles = (roles.SACCO_OFFICIAL,)
+    template_name = "loans/appraisal_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            self.loan = _get_scoped_loan(request, kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        if self.loan.status != Status.SUBMITTED:
+            messages.warning(request, "Only submitted applications can be appraised.")
+            return redirect("loans:loan_detail", pk=self.loan.pk)
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["loan"] = self.loan
+        return context
+
+    def form_valid(self, form):
+        try:
+            workflow.move(self.loan, Status.APPRAISED, self.request.user)
+        except workflow.TransitionError as error:
+            messages.error(self.request, str(error))
+            return redirect("loans:loan_detail", pk=self.loan.pk)
+        form.instance.application = self.loan
+        form.instance.appraised_by = self.request.user
+        form.save()
+        messages.success(self.request, "Appraisal saved. The SACCO Board can now decide.")
+        return redirect("loans:loan_detail", pk=self.loan.pk)
