@@ -91,6 +91,14 @@ class EnterpriseGroup(models.Model):
         limit_choices_to={"level": AdminUnit.Level.PARISH},
     )
     registration_number = models.CharField(max_length=50, blank=True)
+    sacco = models.ForeignKey(
+        "saccos.Sacco",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="enterprise_groups",
+        help_text="The parish PDM SACCO this group borrows from.",
+    )
     registered_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
