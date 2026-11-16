@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Arrears · PDM Tracking System{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'loans:loan_list' %}">Loans</a></li><li class="breadcrumb-item active">Arrears</li></ol></nav>
+<h1 class="h3 mb-1">Loans in arrears</h1>
+<p class="text-muted">Instalments that have fallen due and are not fully repaid. A loan is flagged as defaulted once an instalment is {{ default_after_days }} days overdue. Total in arrears: <strong>UGX {{ total_arrears|intcomma }}</strong>.</p>
+<div class="card shadow-sm"><div class="table-responsive">
+  <table class="table table-hover mb-0 align-middle">
+    <thead class="table-light"><tr><th>#</th><th>Household</th><th>SACCO</th><th class="text-end">In arrears (UGX)</th><th class="text-end">Days overdue</th><th class="text-end">Balance (UGX)</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for row in rows %}{% with loan=row.loan %}
+      <tr>
+        <td><a href="{% url 'loans:loan_detail' loan.pk %}">{{ loan.pk }}</a></td>
+        <td><a href="{% url 'loans:loan_detail' loan.pk %}">{{ loan.household.head_name }}</a><div class="small text-muted">{{ loan.household.village.name }}</div></td>
+        <td>{{ loan.sacco.name }}</td>
+        <td class="text-end">{{ row.arrears|intcomma }}</td>
+        <td class="text-end {% if row.days >= default_after_days %}text-danger fw-bold{% endif %}">{{ row.days }}</td>
+        <td class="text-end">{{ row.balance|intcomma }}</td>
+        <td>{% include "loans/_status_badge.html" %}</td>
+      </tr>
+    {% endwith %}{% empty %}
+      <tr><td colspan="7" class="text-muted text-center py-4">No loans are in arrears.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}
