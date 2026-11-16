@@ -62,3 +62,47 @@ def toggle_checklist_item(request, pk):
     item.save()
     messages.success(request, f"“{item.requirement}” marked as {'met' if item.met else 'not met'}.")
     return redirect("saccos:sacco_detail", pk=item.sacco_id)
+
+
+class FundReleaseCreateView(RoleRequiredMixin, CreateView):
+    """MoFPED or the PDM Secretariat records a transfer to a SACCO."""
+
+    model = FundRelease
+    form_class = FundReleaseForm
+    allowed_roles = (roles.NATIONAL_OFFICIAL,)
+
+    def dispatch(self, request, *args, **kwargs):
+        self.sacco = get_object_or_404(Sacco, pk=kwargs["sacco_pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["sacco"] = self.sacco
+        return context
+
+    def form_valid(self, form):
+        if not self.sacco.is_eligible:
+            form.add_error(None, "This SACCO has not met every checklist requirement, so it cannot receive the fund yet.")
+            return self.form_invalid(form)
+        form.instance.sacco = self.sacco
+        form.instance.recorded_by = self.request.user
+        messages.success(self.request, "Release recorded. The district now confirms that the SACCO received it.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("saccos:sacco_detail", args=[self.sacco.pk])
+
+
+@require_POST
+@role_required(roles.DISTRICT_OFFICIAL)
+def confirm_release(request, pk):
+    release = get_object_or_404(FundRelease.objects.select_related("sacco__parish"), pk=pk)
+    check_unit_in_scope(request.user, release.sacco.parish)
+    if release.is_confirmed:
+        messages.warning(request, "This release was already confirmed.")
+    else:
+        release.confirmed_by = request.user
+        release.confirmed_at = timezone.now()
+        release.save()
+        messages.success(request, "Release confirmed as received by the SACCO.")
+    return redirect("saccos:sacco_detail", pk=release.sacco_id)
