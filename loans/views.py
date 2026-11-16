@@ -197,11 +197,17 @@ class DisbursementCreateView(RoleRequiredMixin, CreateView):
             self.loan = _get_scoped_loan(request, kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
 
-    def get(self, request, *args, **kwargs):
+    def refuse_unless_approved(self):
         if self.loan.status != Status.APPROVED:
-            messages.warning(request, "Only approved loans can be paid out.")
+            messages.warning(self.request, "Only approved loans can be paid out.")
             return redirect("loans:loan_detail", pk=self.loan.pk)
-        return super().get(request, *args, **kwargs)
+        return None
+
+    def get(self, request, *args, **kwargs):
+        return self.refuse_unless_approved() or super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.refuse_unless_approved() or super().post(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
