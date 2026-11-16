@@ -22,10 +22,37 @@ pip install -r requirements.txt
 cp .env.example .env          # then edit DATABASE_URL if needed
 createdb pdm_tracker
 python manage.py migrate
+python manage.py seed_demo     # sample parish and one user per role
 python manage.py runserver
 ```
 
 Open http://127.0.0.1:8000.
+
+## Demo accounts
+
+`seed_demo` creates a sample parish (Mukono › Goma › Seeta) and these users. Every password is `pdm12345` unless you pass `--password`.
+
+| Username | Role | Area |
+| --- | --- | --- |
+| `household` | Household | Seeta Central village |
+| `groupexec` | Enterprise group executive | Seeta parish |
+| `lc1` | LC I Chairperson | Seeta Central village |
+| `parishchief` | Parish Chief | Seeta parish |
+| `pdc` | Parish Development Committee | Seeta parish |
+| `sacco` | PDM SACCO official | Seeta parish |
+| `subcounty` | Sub-county Chief and CDO | Goma sub-county |
+| `district` | District official | Mukono district |
+| `national` | PDM Secretariat and MoFPED | Whole country |
+| `auditor` | Auditor | Whole country |
+| `admin` | Administrator (Django admin) | Whole country |
+
+These are sample people and places for demonstration only.
+
+## Run the tests
+
+```bash
+python manage.py test
+```
 
 ## Deploy
 
