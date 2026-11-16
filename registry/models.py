@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -64,6 +65,48 @@ class AdminUnit(models.Model):
             chain.append(unit)
             unit = unit.parent
         return chain
+
+
+
+class EnterpriseGroup(models.Model):
+    """A group of 10 to 30 households that share an enterprise and apply for loans together."""
+
+    class Enterprise(models.TextChoices):
+        POULTRY = "poultry", "Poultry"
+        PIGGERY = "piggery", "Piggery"
+        DAIRY = "dairy", "Dairy cattle"
+        GOATS = "goats", "Goats"
+        COFFEE = "coffee", "Coffee"
+        PRODUCE = "produce", "Food crops"
+        FISH = "fish", "Fish farming"
+        OTHER = "other", "Other"
+
+    name = models.CharField(max_length=150)
+    enterprise = models.CharField(max_length=20, choices=Enterprise.choices)
+    parish = models.ForeignKey(
+        AdminUnit,
+        on_delete=models.PROTECT,
+        related_name="enterprise_groups",
+        limit_choices_to={"level": AdminUnit.Level.PARISH},
+    )
+    registration_number = models.CharField(max_length=50, blank=True)
+    registered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["parish", "name"], name="unique_group_name_per_parish"),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def member_count(self):
+        return self.members.count()
 
 
 from auditlog.registry import auditlog  # noqa: E402
