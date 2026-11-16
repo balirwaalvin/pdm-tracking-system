@@ -57,3 +57,16 @@ class HouseholdForm(forms.ModelForm):
         if village and group and group.parish_id != village.parent_id:
             self.add_error("enterprise_group", "The group must be in the same parish as the household.")
         return cleaned
+
+
+class EnterpriseGroupForm(forms.ModelForm):
+    class Meta:
+        model = EnterpriseGroup
+        fields = ["name", "enterprise", "parish", "registration_number"]
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        parishes = AdminUnit.objects.filter(level=AdminUnit.Level.PARISH)
+        if user is not None:
+            parishes = scope_queryset(parishes, user, "pk")
+        self.fields["parish"].queryset = parishes
