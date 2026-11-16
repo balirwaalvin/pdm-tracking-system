@@ -16,7 +16,11 @@ from accounts import roles
 from accounts.models import User
 from django.utils import timezone
 
+import datetime
+
+from loans.models import Appraisal, LoanApplication
 from registry.models import AdminUnit, EnterpriseGroup, Household
+from saccos.models import FundRelease, Sacco, SaccoChecklistItem
 
 Level = AdminUnit.Level
 
@@ -77,6 +81,8 @@ class Command(BaseCommand):
         units = self.create_units()
         self.create_users(units, options["password"])
         self.create_groups_and_households(units)
+        self.create_saccos(units)
+        self.create_loans()
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
 
     def create_units(self):
@@ -162,3 +168,101 @@ class Command(BaseCommand):
                 )
             Household.objects.update_or_create(nin=nin, defaults=defaults)
         self.stdout.write(f"  {len(GROUPS)} enterprise groups and {len(HOUSEHOLDS)} households")
+
+    def create_saccos(self, units):
+        sacco_user = User.objects.get(username="sacco")
+        national = User.objects.get(username="national")
+        district = User.objects.get(username="district")
+        now = timezone.now()
+
+        seeta, _ = Sacco.objects.update_or_create(
+            parish=units["Seeta"],
+            defaults={
+                "name": "Seeta PDM SACCO",
+                "registration_number": "SAMPLE/PDM/SEETA/001",
+                "bank_name": "Sample Bank Uganda",
+                "bank_account_number": "SAMPLE-0001",
+            },
+        )
+        nantabulirwa, _ = Sacco.objects.update_or_create(
+            parish=units["Nantabulirwa"],
+            defaults={
+                "name": "Nantabulirwa PDM SACCO",
+                "registration_number": "SAMPLE/PDM/NANT/002",
+                "bank_name": "Sample Bank Uganda",
+                "bank_account_number": "SAMPLE-0002",
+            },
+        )
+        for sacco in (seeta, nantabulirwa):
+            sacco.ensure_checklist()
+        # Seeta meets every requirement; Nantabulirwa still lacks its Supervisory Board.
+        seeta.checklist.update(met=True, checked_by=sacco_user, checked_at=now)
+        nantabulirwa.checklist.exclude(requirement="Supervisory Board in place").update(
+            met=True, checked_by=sacco_user, checked_at=now
+        )
+
+        EnterpriseGroup.objects.filter(parish=units["Seeta"]).update(sacco=seeta)
+        EnterpriseGroup.objects.filter(parish=units["Nantabulirwa"]).update(sacco=nantabulirwa)
+
+        FundRelease.objects.get_or_create(
+            sacco=seeta,
+            financial_year="2025/26",
+            defaults={
+                "amount": 100_000_000,
+                "release_date": datetime.date(2025, 9, 15),
+                "reference": "SAMPLE-REL-0001",
+                "recorded_by": national,
+                "confirmed_by": district,
+                "confirmed_at": now,
+            },
+        )
+        self.stdout.write(f"  {Sacco.objects.count()} SACCOs with checklists and a fund release")
+
+    def create_loans(self):
+        groupexec = User.objects.get(username="groupexec")
+        sacco_user = User.objects.get(username="sacco")
+        now = timezone.now()
+
+        grace = Household.objects.get(nin="CF85001234ABCD")
+        loan, created = LoanApplication.objects.get_or_create(
+            household=grace,
+            enterprise="Layer chicken unit of 200 birds",
+            defaults={
+                "enterprise_group": grace.enterprise_group,
+                "sacco": grace.enterprise_group.sacco,
+                "amount": 800_000,
+                "business_plan": "Buy 200 day-old layer chicks, feed and vaccines. Sell eggs to schools in Seeta. Repay monthly from egg sales.",
+                "term_months": 12,
+                "status": LoanApplication.Status.APPRAISED,
+                "created_by": groupexec,
+                "submitted_at": now,
+            },
+        )
+        Appraisal.objects.get_or_create(
+            application=loan,
+            defaults={
+                "viability_score": 4,
+                "repayment_score": 4,
+                "group_score": 5,
+                "recommendation": Appraisal.Recommendation.APPROVE,
+                "reasons": "Experienced in poultry; group vouches for her; nearby schools buy eggs.",
+                "appraised_by": sacco_user,
+            },
+        )
+
+        isaac = Household.objects.get(nin="CM92004567EFGH")
+        LoanApplication.objects.get_or_create(
+            household=isaac,
+            enterprise="Broiler chickens, 100 birds per cycle",
+            defaults={
+                "enterprise_group": isaac.enterprise_group,
+                "sacco": isaac.enterprise_group.sacco,
+                "amount": 500_000,
+                "business_plan": "Raise 100 broilers every six weeks and sell to Seeta market traders.",
+                "term_months": 10,
+                "status": LoanApplication.Status.SUBMITTED,
+                "created_by": groupexec,
+                "submitted_at": now,
+            },
+        )
+        self.stdout.write(f"  {LoanApplication.objects.count()} loan applications")
