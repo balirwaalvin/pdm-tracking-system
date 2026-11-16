@@ -50,3 +50,27 @@ class LoanListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
         context["statuses"] = Status.choices
         context["can_apply"] = self.request.user.has_role(roles.GROUP_EXECUTIVE)
         return context
+
+
+class LoanCreateView(RoleRequiredMixin, CreateView):
+    """The enterprise group executive starts an application for a member household."""
+
+    model = LoanApplication
+    form_class = LoanApplicationForm
+    allowed_roles = (roles.GROUP_EXECUTIVE,)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        household = form.cleaned_data["household"]
+        form.instance.enterprise_group = household.enterprise_group
+        form.instance.sacco = household.enterprise_group.sacco
+        form.instance.created_by = self.request.user
+        messages.success(self.request, "Application saved as a draft. Check it, then submit it to the SACCO.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("loans:loan_detail", args=[self.object.pk])
