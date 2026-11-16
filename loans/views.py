@@ -1,6 +1,7 @@
 from auditlog.models import LogEntry
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -12,7 +13,7 @@ from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_require
 from accounts.scoping import check_unit_in_scope, scope_queryset
 
 from . import workflow
-from .forms import AppraisalForm, DecisionForm, LoanApplicationForm
+from .forms import AppraisalForm, DecisionForm, DisbursementForm, LoanApplicationForm
 from .models import LoanApplication
 
 Status = LoanApplication.Status
@@ -95,6 +96,8 @@ class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         context["can_submit"] = workflow.can_move(loan, Status.SUBMITTED, user)
         context["can_appraise"] = workflow.can_move(loan, Status.APPRAISED, user)
         context["can_decide"] = workflow.can_move(loan, Status.APPROVED, user)
+        context["disbursement"] = getattr(loan, "disbursement", None)
+        context["can_disburse"] = workflow.can_move(loan, Status.DISBURSED, user)
         if context["can_decide"]:
             context["decision_form"] = DecisionForm()
         context["history"] = LogEntry.objects.get_for_object(loan).select_related("actor").order_by("timestamp")
@@ -180,3 +183,45 @@ def decide_loan(request, pk):
         else:
             messages.success(request, "Loan rejected. The reason is kept on the record.")
     return redirect("loans:loan_detail", pk=pk)
+
+
+class DisbursementCreateView(RoleRequiredMixin, CreateView):
+    """The SACCO records paying out an approved loan, which moves it to Disbursed."""
+
+    form_class = DisbursementForm
+    allowed_roles = (roles.SACCO_OFFICIAL,)
+    template_name = "loans/disbursement_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            self.loan = _get_scoped_loan(request, kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        if self.loan.status != Status.APPROVED:
+            messages.warning(request, "Only approved loans can be paid out.")
+            return redirect("loans:loan_detail", pk=self.loan.pk)
+        return super().get(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["loan"] = self.loan
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["loan"] = self.loan
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            try:
+                workflow.move(self.loan, Status.DISBURSED, self.request.user)
+            except workflow.TransitionError as error:
+                messages.error(self.request, str(error))
+                return redirect("loans:loan_detail", pk=self.loan.pk)
+            form.instance.application = self.loan
+            form.instance.recorded_by = self.request.user
+            form.save()
+        messages.success(self.request, "Disbursement recorded. The loan has been paid out to the household.")
+        return redirect("loans:loan_detail", pk=self.loan.pk)

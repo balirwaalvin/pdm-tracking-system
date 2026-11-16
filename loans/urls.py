@@ -11,4 +11,5 @@ urlpatterns = [
     path("<int:pk>/submit/", views.submit_loan, name="loan_submit"),
     path("<int:pk>/appraise/", views.AppraisalCreateView.as_view(), name="loan_appraise"),
     path("<int:pk>/decide/", views.decide_loan, name="loan_decide"),
+    path("<int:pk>/disburse/", views.DisbursementCreateView.as_view(), name="loan_disburse"),
 ]
