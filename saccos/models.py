@@ -64,8 +64,8 @@ class Sacco(models.Model):
 
     @property
     def funds_available(self):
-        """Confirmed releases not yet lent out."""
-        return self.total_released - self.total_disbursed
+        """Confirmed releases not yet lent out (never below zero)."""
+        return max(self.total_released - self.total_disbursed, 0)
 
 
 # Requirements a PDM SACCO must meet before it receives the fund.
