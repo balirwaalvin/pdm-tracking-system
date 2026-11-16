@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from accounts import roles
 
-from .models import LoanApplication
+from .models import DEFAULT_AFTER_DAYS, LoanApplication
 
 Status = LoanApplication.Status
 SYSTEM = "system"  # changes made by the system itself, such as the 90-day default flag
@@ -26,7 +26,11 @@ TRANSITIONS = {
     (Status.REPAYING, Status.CLOSED): SYSTEM,
     (Status.DISBURSED, Status.DEFAULTED): SYSTEM,
     (Status.REPAYING, Status.DEFAULTED): SYSTEM,
+    (Status.DEFAULTED, Status.CLOSED): SYSTEM,  # a defaulted loan that is later repaid in full
 }
+
+# Loans that have been paid out and are not yet closed.
+ACTIVE_STATUSES = (Status.DISBURSED, Status.REPAYING, Status.DEFAULTED)
 
 
 class TransitionError(Exception):
@@ -67,3 +71,22 @@ def move(application, target, user=None, reason=""):
         application.decision_reason = reason
     application.save()
     return application
+
+
+def after_repayment(application):
+    """Move the loan on after a repayment: to Repaying, or to Closed once fully repaid."""
+    if application.balance == 0 and can_move(application, Status.CLOSED):
+        return move(application, Status.CLOSED)
+    if application.status == Status.DISBURSED:
+        return move(application, Status.REPAYING)
+    return application
+
+
+def flag_default(application, day=None):
+    """Mark the loan Defaulted if an instalment is 90 or more days overdue. True if flagged."""
+    if not can_move(application, Status.DEFAULTED):
+        return False
+    if application.days_in_arrears(day) < DEFAULT_AFTER_DAYS:
+        return False
+    move(application, Status.DEFAULTED)
+    return True
