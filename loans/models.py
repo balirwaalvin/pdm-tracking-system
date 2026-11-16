@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 # Parish Revolving Fund rules (MoFPED PRF handbook).
 LOAN_CEILING = 1_000_000  # Uganda shillings per household
@@ -50,6 +51,64 @@ class LoanApplication(models.Model):
 
     def __str__(self):
         return f"Loan {self.pk}: {self.household.head_name}, UGX {self.amount:,}"
+
+    # Repayment figures. They exist only once the loan has been paid out.
+
+    def schedule(self):
+        """The monthly instalments, or an empty list before disbursement."""
+        from .schedule import build_schedule
+
+        disbursement = getattr(self, "disbursement", None)
+        if disbursement is None:
+            return []
+        return build_schedule(disbursement.amount, self.term_months, disbursement.disbursed_on)
+
+    @property
+    def total_due(self):
+        """Amount paid out plus interest for the whole term."""
+        return sum(instalment.amount for instalment in self.schedule())
+
+    @property
+    def total_repaid(self):
+        return self.repayments.aggregate(total=models.Sum("amount"))["total"] or 0
+
+    @property
+    def balance(self):
+        return max(self.total_due - self.total_repaid, 0)
+
+    def amount_due_by(self, day):
+        return sum(i.amount for i in self.schedule() if i.due_date <= day)
+
+    def arrears(self, day=None):
+        """Instalments fallen due by `day` (default today) and not yet repaid."""
+        day = day or timezone.localdate()
+        return max(self.amount_due_by(day) - self.total_repaid, 0)
+
+    def days_in_arrears(self, day=None):
+        """Days since the oldest instalment that is not fully repaid fell due (0 if none)."""
+        day = day or timezone.localdate()
+        repaid, paid_up_to = self.total_repaid, 0
+        for instalment in self.schedule():
+            paid_up_to += instalment.amount
+            if paid_up_to > repaid:
+                return max((day - instalment.due_date).days, 0)
+        return 0
+
+    def schedule_with_status(self, day=None):
+        """Each instalment with how much of it the repayments so far cover."""
+        day = day or timezone.localdate()
+        left, rows = self.total_repaid, []
+        for instalment in self.schedule():
+            paid = min(left, instalment.amount)
+            left -= paid
+            if paid == instalment.amount:
+                state = "paid"
+            elif instalment.due_date < day:
+                state = "overdue"
+            else:
+                state = "due"
+            rows.append({"instalment": instalment, "paid": paid, "state": state})
+        return rows
 
 
 class Appraisal(models.Model):
@@ -115,8 +174,34 @@ class Disbursement(models.Model):
         return f"UGX {self.amount:,} paid on loan {self.application_id} on {self.disbursed_on}"
 
 
+class Repayment(models.Model):
+    """Money a household paid back to the SACCO on its loan."""
+
+    class Method(models.TextChoices):
+        CASH = "cash", "Cash at the SACCO (receipted)"
+        MOBILE = "mobile", "Mobile money"
+        BANK = "bank", "Bank deposit"
+
+    application = models.ForeignKey(LoanApplication, on_delete=models.PROTECT, related_name="repayments")
+    amount = models.PositiveIntegerField("Amount repaid (UGX)")
+    paid_on = models.DateField("Date paid")
+    method = models.CharField(max_length=10, choices=Method.choices)
+    reference = models.CharField(max_length=60, help_text="Receipt or transaction reference")
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["paid_on", "pk"]
+
+    def __str__(self):
+        return f"UGX {self.amount:,} repaid on loan {self.application_id} on {self.paid_on}"
+
+
 from auditlog.registry import auditlog  # noqa: E402
 
 auditlog.register(LoanApplication)
 auditlog.register(Appraisal)
 auditlog.register(Disbursement)
+auditlog.register(Repayment)
