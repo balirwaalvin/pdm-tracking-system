@@ -1,13 +1,16 @@
+import datetime
+
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import User
 from registry.models import Household
 
 from . import workflow
-from .models import LoanApplication
+from .models import Disbursement, LoanApplication
 
 Status = LoanApplication.Status
 
@@ -199,3 +202,128 @@ class DecisionTests(TestCase):
         self.assertContains(self.client.get(url), "Record decision")
         self.client.force_login(User.objects.get(username="pdc"))
         self.assertNotContains(self.client.get(url), "Record decision")
+
+
+class DisbursementTests(TestCase):
+    """The SACCO pays out an approved loan, within the approved amount and its confirmed funds."""
+
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.sacco_user = User.objects.get(username="sacco")
+        self.loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
+        workflow.move(self.loan, Status.APPROVED, self.sacco_user, reason="Approved by the Board.")
+
+    def disburse(self, username="sacco", loan=None, **overrides):
+        loan = loan or self.loan
+        self.client.force_login(User.objects.get(username=username))
+        data = {
+            "amount": 800_000,
+            "disbursed_on": timezone.localdate().isoformat(),
+            "method": "mobile",
+            "reference": "SAMPLE-TXN-001",
+        }
+        data.update(overrides)
+        return self.client.post(reverse("loans:loan_disburse", args=[loan.pk]), data)
+
+    def test_sacco_official_records_a_disbursement(self):
+        self.disburse()
+        self.loan.refresh_from_db()
+        self.assertEqual(self.loan.status, Status.DISBURSED)
+        self.assertEqual(self.loan.disbursement.amount, 800_000)
+        self.assertEqual(self.loan.disbursement.recorded_by, self.sacco_user)
+        self.assertEqual(self.loan.sacco.total_disbursed, 800_000)
+
+    def test_cannot_pay_out_more_than_approved(self):
+        response = self.disburse(amount=900_000)
+        self.assertContains(response, "more than the approved UGX 800,000")
+        self.loan.refresh_from_db()
+        self.assertEqual(self.loan.status, Status.APPROVED)
+
+    def test_cannot_pay_out_more_than_the_sacco_holds(self):
+        release = self.loan.sacco.releases.get()
+        release.amount = 500_000
+        release.save()
+        response = self.disburse()
+        self.assertContains(response, "only holds UGX 500,000")
+        self.assertFalse(Disbursement.objects.exists())
+
+    def test_unconfirmed_releases_do_not_count(self):
+        self.loan.sacco.releases.update(confirmed_at=None)
+        response = self.disburse()
+        self.assertContains(response, "only holds UGX 0")
+
+    def test_payment_date_cannot_be_in_the_future(self):
+        tomorrow = timezone.localdate() + datetime.timedelta(days=1)
+        response = self.disburse(disbursed_on=tomorrow.isoformat())
+        self.assertContains(response, "cannot be in the future")
+
+    def test_loan_not_approved_cannot_be_disbursed(self):
+        isaac_loan = LoanApplication.objects.get(household__nin="CM92004567EFGH")  # submitted
+        response = self.disburse(loan=isaac_loan)
+        self.assertRedirects(response, reverse("loans:loan_detail", args=[isaac_loan.pk]))
+        isaac_loan.refresh_from_db()
+        self.assertEqual(isaac_loan.status, Status.SUBMITTED)
+        self.assertFalse(Disbursement.objects.exists())
+
+    def test_a_loan_cannot_be_disbursed_twice(self):
+        self.disburse()
+        self.disburse(reference="SAMPLE-TXN-002")
+        self.assertEqual(Disbursement.objects.count(), 1)
+
+    def test_other_roles_cannot_disburse(self):
+        for username in ("groupexec", "parishchief", "pdc", "district", "national", "auditor"):
+            response = self.disburse(username=username)
+            self.assertEqual(response.status_code, 403, username)
+        self.loan.refresh_from_db()
+        self.assertEqual(self.loan.status, Status.APPROVED)
+
+    def test_loan_page_shows_the_disbursement(self):
+        self.disburse()
+        response = self.client.get(reverse("loans:loan_detail", args=[self.loan.pk]))
+        self.assertContains(response, "SAMPLE-TXN-001")
+        self.assertContains(response, "approved → disbursed")
+
+
+class WorkflowEndToEndTests(TestCase):
+    """A loan goes through every person-made step, and steps out of order are refused."""
+
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def test_full_path_from_draft_to_disbursed(self):
+        groupexec = User.objects.get(username="groupexec")
+        sacco = User.objects.get(username="sacco")
+        isaac_loan = LoanApplication.objects.get(household__nin="CM92004567EFGH")
+        loan = LoanApplication.objects.create(
+            household=Household.objects.get(head_name="John Ssemwogerere"),
+            enterprise_group=isaac_loan.enterprise_group,
+            sacco=isaac_loan.sacco,
+            amount=300_000,
+            enterprise="Test",
+            business_plan="Test",
+        )
+        workflow.move(loan, Status.SUBMITTED, groupexec)
+        workflow.move(loan, Status.APPRAISED, sacco)
+        workflow.move(loan, Status.APPROVED, sacco, reason="Good plan.")
+        workflow.move(loan, Status.DISBURSED, sacco)
+        self.assertEqual(loan.status, Status.DISBURSED)
+        self.assertEqual(loan.decision_reason, "Good plan.")
+
+    def test_wrong_status_changes_are_refused(self):
+        sacco = User.objects.get(username="sacco")
+        grace_loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")  # appraised
+        with self.assertRaises(workflow.TransitionError):
+            workflow.move(grace_loan, Status.DISBURSED, sacco)
+        workflow.move(grace_loan, Status.REJECTED, sacco, reason="No market.")
+        with self.assertRaises(workflow.TransitionError):
+            workflow.move(grace_loan, Status.APPROVED, sacco)
+
+    def test_disbursement_by_the_wrong_role_is_refused(self):
+        grace_loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
+        workflow.move(grace_loan, Status.APPROVED, User.objects.get(username="sacco"))
+        with self.assertRaises(PermissionDenied):
+            workflow.move(grace_loan, Status.DISBURSED, User.objects.get(username="district"))
