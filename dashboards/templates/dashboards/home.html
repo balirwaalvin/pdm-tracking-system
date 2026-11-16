@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Home · PDM Tracking System{% endblock %}
+{% block content %}
+<div class="row align-items-center py-4">
+  <div class="col-lg-7">
+    <p class="text-crimson fw-bold text-uppercase small mb-2">Parish Development Model</p>
+    <h1 class="display-6 fw-bold">One shared record for every PDM stakeholder</h1>
+    <p class="lead text-muted">Follow households, enterprise groups, SACCOs, Parish Revolving Fund loans and reports from the village to the ministry.</p>
+    {% if user.is_authenticated %}
+      <p>You are signed in as <strong>{{ user }}</strong>.</p>
+    {% else %}
+      <a class="btn btn-pdm btn-lg" href="{% url 'login' %}">Sign in</a>
+    {% endif %}
+  </div>
+  <div class="col-lg-5 mt-4 mt-lg-0">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h6 text-uppercase text-muted">What the system tracks</h2>
+        <ul class="mb-0">
+          <li>Household profiles and verification</li>
+          <li>Enterprise groups and PDM SACCOs</li>
+          <li>Loans from application to repayment</li>
+          <li>Reports for parish, sub-county, district and national levels</li>
+          <li>Complaints and success stories from citizens</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
