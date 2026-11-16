@@ -283,3 +283,33 @@ class RepaymentCreateView(RoleRequiredMixin, CreateView):
         else:
             messages.success(self.request, f"Repayment recorded. UGX {self.loan.balance:,} is still owed.")
         return redirect("loans:loan_detail", pk=self.loan.pk)
+
+
+class ArrearsListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
+    """Paid-out loans with instalments overdue, oldest arrears first."""
+
+    model = LoanApplication
+    allowed_roles = LOAN_VIEW_ROLES
+    unit_field = "household__village"
+    template_name = "loans/arrears_list.html"
+    context_object_name = "rows"
+
+    def get_queryset(self):
+        loans = (
+            super()
+            .get_queryset()
+            .filter(status__in=workflow.ACTIVE_STATUSES)
+            .select_related("household", "household__village", "sacco", "disbursement")
+        )
+        rows = []
+        for loan in loans:
+            arrears = loan.arrears()
+            if arrears:
+                rows.append({"loan": loan, "arrears": arrears, "days": loan.days_in_arrears(), "balance": loan.balance})
+        return sorted(rows, key=lambda row: row["days"], reverse=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["total_arrears"] = sum(row["arrears"] for row in context["rows"])
+        context["default_after_days"] = workflow.DEFAULT_AFTER_DAYS
+        return context
