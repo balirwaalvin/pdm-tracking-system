@@ -11,5 +11,6 @@ urlpatterns = [
     path("saccos/", include("saccos.urls")),
     path("loans/", include("loans.urls")),
     path("ussd/", include("ussd.urls")),
+    path("complaints/", include("feedback.urls")),
     path("", include("dashboards.urls")),
 ]
