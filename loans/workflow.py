@@ -2,6 +2,9 @@
 
 Every status change goes through `move()`, which checks the rule, records
 who did it and when, and saves. The audit log then keeps the history.
+
+Maker-checker: the official who appraised a loan cannot approve or reject
+it; a second SACCO official must decide.
 """
 
 from django.core.exceptions import PermissionDenied
@@ -37,6 +40,24 @@ class TransitionError(Exception):
     """Raised when a status change is not allowed from the current status."""
 
 
+class SeparationOfDutiesError(PermissionDenied):
+    """Raised when the official who appraised a loan tries to decide it too (maker-checker)."""
+
+    message = "The official who appraised this loan cannot also decide it. Another SACCO official must decide."
+
+    def __init__(self):
+        super().__init__(self.message)
+
+
+DECISIONS = (Status.APPROVED, Status.REJECTED)
+
+
+def is_appraiser(application, user):
+    """True if `user` appraised this loan, so must not also approve or reject it."""
+    appraisal = getattr(application, "appraisal", None)
+    return user is not None and appraisal is not None and appraisal.appraised_by_id == user.pk
+
+
 def allowed_role(current, target):
     return TRANSITIONS.get((current, target))
 
@@ -48,6 +69,8 @@ def can_move(application, target, user=None):
         return False
     if role == SYSTEM:
         return user is None
+    if target in DECISIONS and is_appraiser(application, user):
+        return False
     return user is not None and (user.is_superuser or user.has_role(role))
 
 
@@ -58,6 +81,8 @@ def move(application, target, user=None, reason=""):
         raise TransitionError(
             f"A loan cannot go from {application.get_status_display()} to {Status(target).label}."
         )
+    if target in DECISIONS and is_appraiser(application, user):
+        raise SeparationOfDutiesError()
     if not can_move(application, target, user):
         raise PermissionDenied(f"Only the {role} can make this change.")
 
