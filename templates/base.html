@@ -18,19 +18,9 @@
       </button>
       <div class="collapse navbar-collapse" id="mainNav">
         <ul class="navbar-nav me-auto">
-          {% if user.is_authenticated and user.role != "Household" %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'registry:household_list' %}">Households</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'registry:group_list' %}">Groups</a></li>
-            {% if user.role != "LC I Chairperson" %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'saccos:sacco_list' %}">SACCOs</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan_list' %}">Loans</a></li>
-            {% endif %}
-            {% if user.role != "LC I Chairperson" %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
-            {% if user.role == "Auditor" %}<li class="nav-item"><a class="nav-link" href="{% url 'audit_log' %}">Audit log</a></li>{% endif %}
-            {% endif %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'ussd:simulator' %}">USSD</a></li>
-          {% endif %}
+          {% for item in menu %}
+            <li class="nav-item"><a class="nav-link{% if request.resolver_match.view_name == item.url_name %} active{% endif %}" href="{% url item.url_name %}">{{ item.label }}</a></li>
+          {% endfor %}
           {% block nav_links %}{% endblock %}
         </ul>
         <ul class="navbar-nav">

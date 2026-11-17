@@ -21,3 +21,10 @@ body { background: var(--pdm-light); }
 .ussd-screen { background: #e9f1e4; color: #111; font-family: monospace; min-height: 180px; padding: .75rem; border-radius: .5rem; white-space: normal; }
 .ussd-phone .form-control { font-family: monospace; }
 .ussd-phone > .small { color: #ccc !important; }
+
+/* Home workspace: to-do cards */
+.task-card { border-left: 4px solid #dee2e6; transition: transform .1s; }
+.task-card:hover { transform: translateY(-2px); }
+.task-card.task-urgent { border-left-color: var(--pdm-gold); }
+.task-card .display-6 { color: var(--pdm-navy); }
+.navbar-pdm .nav-link.active { font-weight: 600; text-decoration: underline; text-underline-offset: 6px; }
