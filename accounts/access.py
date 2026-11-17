@@ -61,6 +61,8 @@ PAGES = [
             "Try the household USSD menu, to help residents who ask."),
     Feature("audit_log", "Audit log", "audit_log", (r.AUDITOR,),
             "Every change to every record, read-only, with CSV download."),
+    Feature("sign_in_log", "Sign-ins", "sign_in_log", (r.AUDITOR,),
+            "Every sign-in attempt, including failed ones and locked accounts."),
 ]
 
 # Things a role can do. Each is checked again by its own view.
