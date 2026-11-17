@@ -18,7 +18,7 @@ from django.utils import timezone
 
 import datetime
 
-from feedback.models import Complaint, ComplaintResponse
+from feedback.models import Complaint, ComplaintResponse, SuccessStory
 from feedback.services import escalate_overdue
 from loans import workflow
 from loans.models import Appraisal, Disbursement, LoanApplication, Repayment
@@ -92,6 +92,7 @@ class Command(BaseCommand):
         self.create_saccos(units)
         self.create_loans()
         self.create_complaints()
+        self.create_stories()
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
 
     def create_units(self):
@@ -404,3 +405,41 @@ class Command(BaseCommand):
                 complaint.save()
         escalate_overdue(now)  # Henry's repayment complaint has waited 10 days, so it moves to the sub-county
         self.stdout.write(f"  {Complaint.objects.count()} complaints")
+
+    def create_stories(self):
+        """One published story and one waiting for the PDC."""
+        now = timezone.now()
+        parish_chief = User.objects.get(username="parishchief")
+        pdc = User.objects.get(username="pdc")
+        S = SuccessStory
+        # NIN, title, story, show name?, status
+        stories = [
+            ("CM86002468KLMN", "From four weaners to a growing piggery",
+             "Moses used his UGX 600,000 PDM loan to buy four weaners, feed and drugs. Two sows have farrowed and he "
+             "sold six piglets at the Kitega market. He has paid every instalment so far and now trains two young "
+             "people from his group in pig care.", True, S.Status.APPROVED),
+            ("CM84004680STUV", "A sty built by the group",
+             "Ronald, who has a disability, was approved for UGX 700,000 to start a piggery. His group helped him build "
+             "the sty while he waits for the payout.", False, S.Status.SUBMITTED),
+        ]
+        for nin, title, text, show_name, status in stories:
+            story, made = S.objects.get_or_create(
+                household=Household.objects.get(nin=nin),
+                title=title,
+                defaults={
+                    "story": text,
+                    "status": status,
+                    "consent_given": True,
+                    "consent_method": S.ConsentMethod.SIGNED,
+                    "show_name": show_name,
+                    "consent_recorded_by": parish_chief,
+                    "consent_recorded_at": now - datetime.timedelta(days=6),
+                    "drafted_by": parish_chief,
+                    "created_at": now - datetime.timedelta(days=6),
+                },
+            )
+            if made and status == S.Status.APPROVED:
+                story.checked_by, story.checked_at = pdc, now - datetime.timedelta(days=4)
+                story.check_note = "Checked against the loan file and repayments; matches."
+                story.save()
+        self.stdout.write(f"  {S.objects.count()} success stories")
