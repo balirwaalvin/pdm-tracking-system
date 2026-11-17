@@ -45,6 +45,8 @@ DEMO_USERS = [
     ("parishchief", "Sarah", "Namubiru", roles.PARISH_CHIEF, "Seeta", "256700000004"),
     ("pdc", "Moses", "Kato", roles.PDC, "Seeta", "256700000005"),
     ("sacco", "Ruth", "Nabirye", roles.SACCO_OFFICIAL, "Seeta", "256700000006"),
+    # Maker-checker: "sacco" appraises loans, the Board chair approves or rejects them.
+    ("saccochair", "Josephine", "Auma", roles.SACCO_OFFICIAL, "Seeta", "256700000030"),
     ("subcounty", "David", "Ouma", roles.SUBCOUNTY_OFFICIAL, "Goma", "256700000007"),
     ("district", "Agnes", "Akello", roles.DISTRICT_OFFICIAL, "Mukono", "256700000008"),
     ("national", "Samuel", "Okello", roles.NATIONAL_OFFICIAL, None, "256700000009"),
@@ -280,10 +282,10 @@ class Command(BaseCommand):
                 "submitted_at": now,
             },
         )
-        self.create_decided_loans(groupexec, sacco_user)
+        self.create_decided_loans(groupexec, sacco_user, User.objects.get(username="saccochair"))
         self.stdout.write(f"  {LoanApplication.objects.count()} loan applications")
 
-    def create_decided_loans(self, groupexec, sacco_user):
+    def create_decided_loans(self, groupexec, sacco_user, board_chair):
         """One loan at each later stage: approved, rejected and paid out."""
         today = timezone.localdate()
         # household NIN, enterprise, amount, term, status, days ago decided, reason, scores
@@ -321,7 +323,7 @@ class Command(BaseCommand):
                     "status": status,
                     "created_by": groupexec,
                     "submitted_at": decided_at - datetime.timedelta(days=7),
-                    "decided_by": sacco_user,
+                    "decided_by": board_chair,  # not the appraiser (maker-checker)
                     "decided_at": decided_at,
                     "decision_reason": reason,
                 },

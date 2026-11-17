@@ -56,6 +56,7 @@ Open http://127.0.0.1:8000.
 | `parishchief` | Parish Chief | Seeta parish |
 | `pdc` | Parish Development Committee | Seeta parish |
 | `sacco` | PDM SACCO official | Seeta parish |
+| `saccochair` | PDM SACCO official (Board chair: approves or rejects loans that `sacco` appraised) | Seeta parish |
 | `subcounty` | Sub-county Chief and CDO | Goma sub-county |
 | `district` | District official | Mukono district |
 | `national` | PDM Secretariat and MoFPED | Whole country |
