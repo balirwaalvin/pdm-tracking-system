@@ -3,7 +3,9 @@
 Africa's Talking sends the whole session's input as `text`, with each
 answer separated by "*" (for example "" first, then "1", then "1*2").
 Replies start with "CON" (wait for another answer) or "END" (close).
-The household is found by the phone number it dials from.
+The household is found by the phone number it dials from, and answered
+in its own language (English or Luganda; "0" on the main menu switches).
+All screen texts live in texts.py.
 """
 
 from feedback import services as feedback
@@ -12,6 +14,7 @@ from loans.models import LoanApplication
 from registry.models import Household
 
 from .sms import normalise_phone
+from .texts import CATEGORY_LABELS, t, word
 
 Status = LoanApplication.Status
 MAX_LENGTH = 182  # longest screen most phones show
@@ -46,110 +49,118 @@ def respond(phone, text):
     """The reply for one step of a USSD session."""
     household = find_household(phone)
     if household is None:
-        return end("This number is not registered under PDM. Visit your Parish Chief to be profiled.")
+        return end(t("en", "not_registered"))
 
     answers = [part for part in (text or "").split("*") if part != ""]
+    if answers and answers[0] == "0":  # switch language, then show the menu again
+        household.language = "en" if household.language == "lg" else "lg"
+        household.save(update_fields=["language"])
+        answers = answers[1:]
+    lang = household.language
     if not answers:
-        return con(
-            f"PDM (prototype)\n{household.head_name}\n1. My PDM status\n2. My loan\n"
-            "3. Report a problem\n4. Track a complaint"
-        )
+        return con(t(lang, "menu", name=household.head_name))
     if answers[0] == "1":
-        return end(status_text(household))
+        return end(status_text(household, lang))
     if answers[0] == "2":
-        return end(loan_text(household))
+        return end(loan_text(household, lang))
     if answers[0] == "3":
-        return report_problem(household, answers[1:])
+        return report_problem(household, answers[1:], lang)
     if answers[0] == "4":
-        return track_complaint(household, answers[1:])
-    return end("Invalid choice. Please dial again.")
+        return track_complaint(household, answers[1:], lang)
+    return end(t(lang, "invalid"))
 
 
-def status_text(household):
-    lines = [household.head_name, f"Village: {household.village.name}"]
+def status_text(household, lang="en"):
+    lines = [household.head_name, t(lang, "village", village=household.village.name)]
     if household.verification == Household.Verification.VERIFIED:
-        lines.append("Verified by LC I")
+        lines.append(t(lang, "verified"))
     elif household.verification == Household.Verification.REJECTED:
-        lines.append(f"Not verified: {household.verification_note}")
+        lines.append(t(lang, "rejected", note=household.verification_note))
     else:
-        lines.append("Waiting for LC I to verify")
+        lines.append(t(lang, "pending"))
     group = household.enterprise_group
-    lines.append(f"Group: {group.name}" if group else "Not yet in an enterprise group")
+    lines.append(t(lang, "group", group=group.name) if group else t(lang, "no_group"))
     if group and group.sacco:
-        lines.append(f"SACCO: {group.sacco.name}")
+        lines.append(t(lang, "sacco", sacco=group.sacco.name))
     return "\n".join(lines)
 
 
-def loan_text(household):
+def loan_text(household, lang="en"):
     loan = household.loans.select_related("sacco", "disbursement").order_by("-created_at").first()
     if loan is None:
-        return "You have no PDM loan application. Ask your enterprise group executive."
+        return t(lang, "no_loan")
 
-    amount = f"UGX {loan.amount:,}"
+    amount, sacco = f"UGX {loan.amount:,}", loan.sacco.name
     if loan.status == Status.DRAFT:
-        return f"Loan of {amount} is a draft with your group executive."
+        return t(lang, "loan_draft", amount=amount)
     if loan.status in (Status.SUBMITTED, Status.APPRAISED):
-        return f"Loan of {amount} is with {loan.sacco.name} for a decision."
+        return t(lang, "loan_waiting", amount=amount, sacco=sacco)
     if loan.status == Status.APPROVED:
-        return f"Loan of {amount} is approved. {loan.sacco.name} will pay it out soon."
+        return t(lang, "loan_approved", amount=amount, sacco=sacco)
     if loan.status == Status.REJECTED:
-        return f"Loan of {amount} was not approved. Reason: {loan.decision_reason}"
+        return t(lang, "loan_rejected", amount=amount, reason=loan.decision_reason)
     if loan.status == Status.CLOSED:
-        return f"Loan of {amount} is fully repaid. Thank you."
+        return t(lang, "loan_closed", amount=amount)
 
-    lines = [f"Loan {amount}", f"Repaid UGX {loan.total_repaid:,}", f"Balance UGX {loan.balance:,}"]
+    lines = [
+        t(lang, "loan", amount=amount),
+        t(lang, "repaid", value=f"{loan.total_repaid:,}"),
+        t(lang, "balance", value=f"{loan.balance:,}"),
+    ]
     arrears = loan.arrears()
     if arrears:
-        lines.append(f"Overdue UGX {arrears:,} ({loan.days_in_arrears()} days)")
+        lines.append(t(lang, "overdue", value=f"{arrears:,}", days=loan.days_in_arrears()))
     else:
         upcoming = next((row for row in loan.schedule_with_status() if row["state"] != "paid"), None)
         if upcoming:
             due = upcoming["instalment"]
-            lines.append(f"Next UGX {due.amount - upcoming['paid']:,} by {due.due_date:%d %b %Y}")
+            lines.append(t(lang, "next", value=f"{due.amount - upcoming['paid']:,}", date=f"{due.due_date:%d %b %Y}"))
     if loan.status == Status.DEFAULTED:
-        lines.append("In default: visit your SACCO.")
+        lines.append(t(lang, "defaulted"))
     return "\n".join(lines)
 
 
-# Short labels for a phone screen, in the same order as Complaint.Category.
-CATEGORY_MENU = [
-    (Complaint.Category.LOAN_DELAY, "Loan delayed"),
-    (Complaint.Category.VERIFICATION, "Left out or rejected"),
-    (Complaint.Category.REPAYMENT, "Repayment record"),
-    (Complaint.Category.SACCO, "SACCO or official"),
-    (Complaint.Category.BRIBERY, "Asked for a bribe"),
-    (Complaint.Category.OTHER, "Other"),
+# Complaint categories in menu order (labels are in texts.CATEGORY_LABELS).
+CATEGORIES = [
+    Complaint.Category.LOAN_DELAY,
+    Complaint.Category.VERIFICATION,
+    Complaint.Category.REPAYMENT,
+    Complaint.Category.SACCO,
+    Complaint.Category.BRIBERY,
+    Complaint.Category.OTHER,
 ]
 
 
-def report_problem(household, answers):
+def report_problem(household, answers, lang="en"):
     """3 -> choose a category -> describe -> reference number."""
     if not answers:
-        options = "\n".join(f"{i}. {label}" for i, (_, label) in enumerate(CATEGORY_MENU, start=1))
-        return con(f"Problem is about:\n{options}")
+        options = "\n".join(f"{i}. {label}" for i, label in enumerate(CATEGORY_LABELS[lang], start=1))
+        return con(t(lang, "categories", options=options))
     choice = answers[0]
-    if not choice.isdigit() or not 1 <= int(choice) <= len(CATEGORY_MENU):
-        return end("Invalid choice. Please dial again.")
+    if not choice.isdigit() or not 1 <= int(choice) <= len(CATEGORIES):
+        return end(t(lang, "invalid"))
     if len(answers) == 1:
-        return con("Describe the problem in a few words:")
+        return con(t(lang, "describe"))
     description = "*".join(answers[1:]).strip()
     if len(description) < 3:
-        return end("Please dial again and describe the problem.")
-    category = CATEGORY_MENU[int(choice) - 1][0]
-    complaint = feedback.raise_complaint(household, category, description, Complaint.Channel.USSD)
-    return end(f"Received. Ref {complaint.reference}. You will get an answer within 7 days. PDM services are free.")
+        return end(t(lang, "too_short"))
+    complaint = feedback.raise_complaint(household, CATEGORIES[int(choice) - 1], description, Complaint.Channel.USSD)
+    return end(t(lang, "received", reference=complaint.reference))
 
 
-def track_complaint(household, answers):
+def track_complaint(household, answers, lang="en"):
     """4 -> enter the reference number -> status and the latest reply. Own complaints only."""
     if not answers:
-        return con("Enter your complaint number (the digits after PDM-):")
+        return con(t(lang, "ask_reference"))
     digits = "".join(ch for ch in answers[0] if ch.isdigit())
     complaint = household.complaints.filter(pk=int(digits)).first() if digits else None
     if complaint is None:
-        return end("No complaint with that number for this phone.")
-    lines = [f"{complaint.reference}: {complaint.get_status_display()}", f"With the {complaint.get_level_display().lower()} office"]
+        return end(t(lang, "no_complaint"))
+    lines = [
+        t(lang, "complaint_status", reference=complaint.reference, status=word(lang, complaint.status)),
+        t(lang, "with_office", level=word(lang, complaint.level)),
+    ]
     latest = complaint.responses.order_by("-created_at").first()
     if latest:
-        lines.append(f"Reply: {latest.message}")
+        lines.append(t(lang, "reply", message=latest.message))
     return end("\n".join(lines))
