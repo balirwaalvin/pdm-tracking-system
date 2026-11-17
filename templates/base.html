@@ -21,6 +21,7 @@
           {% for item in menu %}
             <li class="nav-item"><a class="nav-link{% if request.resolver_match.view_name == item.url_name %} active{% endif %}" href="{% url item.url_name %}">{{ item.label }}</a></li>
           {% endfor %}
+          {% if not user.is_authenticated %}<li class="nav-item"><a class="nav-link" href="{% url 'public_parishes' %}">Parish pages</a></li>{% endif %}
           {% block nav_links %}{% endblock %}
         </ul>
         <ul class="navbar-nav">
@@ -51,7 +52,7 @@
   </main>
 
   <footer class="container py-4 text-muted small border-top">
-    PDM Tracking System · E-Commerce, E-Business &amp; E-Governance · Uganda Christian University
+    PDM Tracking System · E-Commerce, E-Business &amp; E-Governance · Uganda Christian University · <a href="{% url 'public_parishes' %}">Public parish pages</a>
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   {% block extra_js %}{% endblock %}

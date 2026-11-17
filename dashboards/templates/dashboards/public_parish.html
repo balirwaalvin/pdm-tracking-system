@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ parish.name }} parish · PDM Tracking System{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'public_parishes' %}">Parish pages</a></li><li class="breadcrumb-item active">{{ parish.name }}</li></ol></nav>
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+  <div>
+    <p class="text-crimson fw-bold text-uppercase small mb-1">Public parish page</p>
+    <h1 class="h3 mb-0">{{ parish.name }} parish</h1>
+    <p class="text-muted mb-0">{{ parish.parent.name }} sub-county · {{ parish.parent.parent.name }} district</p>
+  </div>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'public_parish_data' parish.pk %}">Download the figures (CSV)</a>
+</div>
+
+{% with f=figures %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="small text-muted">Households profiled</div><div class="h3 mb-0">{{ f.households }}</div>
+    <div class="small text-muted">{{ f.verified }} verified by their LC I</div>
+  </div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="small text-muted">Loans paid out</div><div class="h3 mb-0">{{ f.loans_paid_out }}</div>
+    <div class="small text-muted">UGX {{ f.amount_paid_out|intcomma }} in total</div>
+  </div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="small text-muted">Repaid on time</div><div class="h3 mb-0">{% if f.repayment_rate is not None %}{{ f.repayment_rate }}%{% else %}-{% endif %}</div>
+    <div class="small text-muted">of instalments due so far · UGX {{ f.amount_repaid|intcomma }} repaid</div>
+  </div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="small text-muted">Complaints</div><div class="h3 mb-0">{{ f.complaints_resolved }} / {{ f.complaints }}</div>
+    <div class="small text-muted">resolved</div>
+  </div></div></div>
+</div>
+<div class="card shadow-sm mb-4"><div class="card-body small">
+  <strong>Who is included:</strong> {{ f.women }} women-headed households · {{ f.youth }} youth-headed · {{ f.disability }} with a person with a disability · {{ f.groups }} enterprise group{{ f.groups|pluralize }}.
+  {% if f.sacco_name %}<br><strong>{{ f.sacco_name }}:</strong> {% if f.sacco_eligible %}meets all requirements to receive the Parish Revolving Fund.{% else %}does not yet meet all requirements to receive the Parish Revolving Fund.{% endif %}{% endif %}
+</div></div>
+{% endwith %}
+
+<h2 class="h5 mb-3">Success stories</h2>
+<div class="row g-3">
+  {% for story in stories %}
+  <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+    <h3 class="h5">{{ story.title }}</h3>
+    <p>{{ story.story|linebreaksbr }}</p>
+    <p class="small text-muted mb-0">{{ story.public_name }} · checked by the Parish Development Committee on {{ story.checked_at|date:"j M Y" }}</p>
+  </div></div></div>
+  {% empty %}<p class="text-muted">No verified stories yet.</p>{% endfor %}
+</div>
+<p class="small text-muted mt-4">PDM services are free. If anyone asks you for money, dial the PDM USSD code and choose “Report a problem”. Bribery reports go straight to the sub-county.</p>
+{% endblock %}
