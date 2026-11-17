@@ -12,7 +12,7 @@ from accounts import roles
 from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_required
 from accounts.scoping import check_unit_in_scope, scope_queryset
 
-from . import workflow
+from . import notifications, workflow
 from .forms import AppraisalForm, DecisionForm, DisbursementForm, LoanApplicationForm, RepaymentForm
 from .models import LoanApplication
 
@@ -183,6 +183,7 @@ def decide_loan(request, pk):
     except workflow.TransitionError as error:
         messages.error(request, str(error))
     else:
+        notifications.notify_decision(loan)
         if approve:
             messages.success(request, "Loan approved. Record the disbursement when the money is paid out.")
         else:
@@ -234,6 +235,7 @@ class DisbursementCreateView(RoleRequiredMixin, CreateView):
             form.instance.application = self.loan
             form.instance.recorded_by = self.request.user
             form.save()
+            notifications.notify_disbursement(self.loan)
         messages.success(self.request, "Disbursement recorded. The loan has been paid out to the household.")
         return redirect("loans:loan_detail", pk=self.loan.pk)
 
@@ -278,6 +280,7 @@ class RepaymentCreateView(RoleRequiredMixin, CreateView):
             form.instance.recorded_by = self.request.user
             form.save()
             workflow.after_repayment(self.loan)
+            notifications.notify_repayment(form.instance)
         if self.loan.status == Status.CLOSED:
             messages.success(self.request, "Repayment recorded. The loan is now fully repaid and closed.")
         else:
