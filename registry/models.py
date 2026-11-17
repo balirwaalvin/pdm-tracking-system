@@ -189,6 +189,10 @@ class Household(models.Model):
 
     class Meta:
         ordering = ["head_name"]
+        constraints = [
+            # USSD and SMS find a household by phone, so one number must mean one household.
+            models.UniqueConstraint(fields=["phone"], condition=~models.Q(phone=""), name="unique_household_phone"),
+        ]
 
     def __str__(self):
         return f"{self.head_name} ({self.nin})"
