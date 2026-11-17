@@ -178,6 +178,14 @@ class Household(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    account = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="household_record",
+        help_text="The head of household's own login, if they have one. They see only this household.",
+    )
 
     class Meta:
         ordering = ["head_name"]
