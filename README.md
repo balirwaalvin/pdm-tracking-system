@@ -22,6 +22,7 @@ Under active development: a functional prototype within 10 days. See [docs/PROGR
 - **Success stories:** the Parish Chief or CDO drafts a story and records the household's consent (and whether they may be named); the PDC checks it against the household's records and approves it or sends it back with a reason.
 - **Public parish pages** (`/parishes/`, no sign-in): anonymised totals (households, loans paid out, on-time repayment rate, complaints resolved), approved stories, and the same figures as an open data CSV.
 - **Dashboards:** totals and Chart.js charts for the user's own area, split one level down (national by district, district by sub-county, sub-county by parish, parish by village): households and verification, inclusion, money paid out, repaid and in arrears, and portfolio at risk.
+- **Governance and sign-in security:** maker-checker on loans (the official who appraised a loan cannot approve or reject it; `saccochair` decides what `sacco` appraised), one phone number per household, a sign-in log for the auditor, lockout after 5 failed sign-ins in 15 minutes, password change for every user, each user's previous sign-in shown on their workspace, and sessions that end after 30 idle minutes.
 - **Audit trail:** every change is logged with who made it and when. The auditor has a read-only audit log page (`/audit/`) with filters and a CSV download.
 
 Every page checks the user's role and shows only records in the user's own area.
