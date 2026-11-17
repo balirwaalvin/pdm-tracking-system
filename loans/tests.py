@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
-from registry.models import Household
+from registry.models import AdminUnit, Household
 
 from . import workflow
 from .models import Disbursement, LoanApplication, Repayment
@@ -576,3 +576,42 @@ class MakerCheckerTests(TestCase):
         # Loans entered from paper files (the Wakiso sample) name no officials, so they are skipped.
         for loan in LoanApplication.objects.exclude(decided_by=None).select_related("appraisal"):
             self.assertNotEqual(loan.decided_by_id, loan.appraisal.appraised_by_id, loan)
+
+
+class ReceiptTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.client.defaults["HTTP_HOST"] = "localhost"
+        self.repayment = Repayment.objects.filter(application__household__head_name="Moses Waiswa").first()
+
+    def get(self, username):
+        self.client.force_login(User.objects.get(username=username))
+        return self.client.get(reverse("loans:repayment_receipt", args=[self.repayment.pk]))
+
+    def test_receipt_shows_the_number_and_amount(self):
+        response = self.get("sacco")
+        self.assertContains(response, self.repayment.receipt_number)
+        self.assertContains(response, "UGX 53,000")
+        self.assertRegex(self.repayment.receipt_number, r"^RCPT-\d{6}$")
+
+    def test_officials_outside_the_area_are_refused(self):
+        sacco = User.objects.get(username="sacco")
+        sacco.admin_unit = AdminUnit.objects.get(name="Nantabulirwa")
+        sacco.save()
+        self.assertEqual(self.get("sacco").status_code, 403)
+
+    def test_household_sees_only_its_own_receipts(self):
+        self.assertEqual(self.get("household").status_code, 403)  # Grace, not Moses
+        Household.objects.filter(head_name="Grace Nakato").update(account=None)
+        Household.objects.filter(head_name="Moses Waiswa").update(account=User.objects.get(username="household"))
+        self.assertEqual(self.get("household").status_code, 200)
+
+    def test_roles_without_loan_access_are_refused(self):
+        self.assertEqual(self.get("lc1").status_code, 403)
+
+    def test_signed_out_users_are_sent_to_sign_in(self):
+        response = self.client.get(reverse("loans:repayment_receipt", args=[self.repayment.pk]))
+        self.assertEqual(response.status_code, 302)

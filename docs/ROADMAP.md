@@ -37,8 +37,8 @@ Found during development.
 
 Use it for whatever slipped. Otherwise:
 
-- [ ] USSD menu in Luganda as well as English (language choice on the first screen). This shows inclusion for households who do not read English.
-- [ ] Repayment receipts: a numbered receipt page for each repayment, printable from the browser.
+- [x] USSD menu in Luganda as well as English (language choice on the first screen). This shows inclusion for households who do not read English.
+- [x] Repayment receipts: a numbered receipt page for each repayment, printable from the browser.
 
 ## Mon 23 Nov: walkthrough and security (Must)
 
