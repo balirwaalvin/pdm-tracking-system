@@ -37,7 +37,8 @@ class HomeView(TemplateView):
             tasks=workspace.tasks_for(user),
             pages=pages,
             actions=access.actions_for(user),
-            denied=[feature for feature in access.PAGES if feature not in pages],
+            # "My household" is a household's own page, not something officials lack.
+            denied=[f for f in access.PAGES if f not in pages and f.key != "my_household"],
         )
         if access.allows(user, "my_household"):
             context["household"] = getattr(user, "household_record", None)
