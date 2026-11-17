@@ -87,6 +87,7 @@ class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         context["can_submit"] = workflow.can_move(loan, Status.SUBMITTED, user)
         context["can_appraise"] = workflow.can_move(loan, Status.APPRAISED, user)
         context["can_decide"] = workflow.can_move(loan, Status.APPROVED, user)
+        context["appraised_by_me"] = loan.status == Status.APPRAISED and workflow.is_appraiser(loan, user)
         context["disbursement"] = getattr(loan, "disbursement", None)
         context["can_disburse"] = workflow.can_move(loan, Status.DISBURSED, user)
         context["schedule"] = loan.schedule_with_status()
@@ -172,6 +173,8 @@ def decide_loan(request, pk):
     target = Status.APPROVED if approve else Status.REJECTED
     try:
         workflow.move(loan, target, request.user, reason=form.cleaned_data["reason"].strip())
+    except workflow.SeparationOfDutiesError as error:
+        messages.error(request, error.message)
     except workflow.TransitionError as error:
         messages.error(request, str(error))
     else:
