@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Dashboard · PDM Tracking System{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+  <div>
+    <p class="text-crimson fw-bold text-uppercase small mb-1">PDM dashboard</p>
+    <h1 class="h3 mb-0">{{ area_name }}</h1>
+  </div>
+  <p class="small text-muted mb-0">Live figures from the shared record · sample data only</p>
+</div>
+
+<div class="row g-3 mb-3">
+  {% with h=summary.households %}
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="small text-muted">Households profiled</div><div class="h3 mb-0">{{ h.total|intcomma }}</div>
+    <div class="small text-muted">{{ h.verified }} verified · {{ h.pending }} waiting</div>
+  </div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="small text-muted">Groups and SACCOs</div><div class="h3 mb-0">{{ summary.groups }} · {{ summary.saccos }}</div>
+    <div class="small text-muted">{{ summary.eligible_saccos }} of {{ summary.saccos }} SACCOs eligible</div>
+  </div></div></div>
+  {% endwith %}
+  {% with m=summary.money %}
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="small text-muted">Paid out to households (UGX)</div><div class="h3 mb-0">{{ m.disbursed|intcomma }}</div>
+    <div class="small text-muted">of {{ summary.released|intcomma }} released · {{ m.repaid|intcomma }} repaid</div>
+  </div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="small text-muted">In arrears (UGX)</div><div class="h3 mb-0 {% if m.arrears %}text-danger{% endif %}">{{ m.arrears|intcomma }}</div>
+    <div class="small text-muted">Portfolio at risk: {{ m.portfolio_at_risk }}% of {{ m.outstanding|intcomma }} owed</div>
+  </div></div></div>
+  {% endwith %}
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-4"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Loans by status ({{ summary.loans_total }})</h2>
+    <canvas id="statusChart" height="220" aria-label="Loans by status" role="img"></canvas>
+  </div></div></div>
+  <div class="col-lg-4"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Household verification</h2>
+    <canvas id="verificationChart" height="220" aria-label="Households by verification" role="img"></canvas>
+    {% with h=summary.households %}<p class="small text-muted mt-2 mb-0">Inclusion: {{ h.women }} women-headed · {{ h.youth }} youth · {{ h.disability }} with a disability</p>{% endwith %}
+  </div></div></div>
+  <div class="col-lg-4"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Money by {{ breakdown_level|lower|default:"area" }} (UGX)</h2>
+    <canvas id="moneyChart" height="220" aria-label="Money paid out, repaid and overdue by unit" role="img"></canvas>
+  </div></div></div>
+</div>
+
+<div class="card shadow-sm"><div class="table-responsive">
+  <table class="table table-sm mb-0 align-middle">
+    <thead class="table-light"><tr><th>{{ breakdown_level|default:"Unit" }}</th><th class="text-end">Households</th><th class="text-end">Verified</th><th class="text-end">Loans</th><th class="text-end">Paid out</th><th class="text-end">Repaid</th><th class="text-end">Owed</th><th class="text-end">In arrears</th><th class="text-end">At risk</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr><td>{{ row.unit.name }}</td><td class="text-end">{{ row.households }}</td><td class="text-end">{{ row.verified }}</td><td class="text-end">{{ row.loans }}</td>
+        <td class="text-end">{{ row.disbursed|intcomma }}</td><td class="text-end">{{ row.repaid|intcomma }}</td><td class="text-end">{{ row.outstanding|intcomma }}</td>
+        <td class="text-end {% if row.arrears %}text-danger{% endif %}">{{ row.arrears|intcomma }}</td><td class="text-end">{{ row.portfolio_at_risk }}%</td></tr>
+    {% empty %}<tr><td colspan="9" class="text-muted text-center py-3">No units below your area.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+<p class="small text-muted mt-2">Portfolio at risk is the balance of loans with any instalment overdue, as a share of everything still owed.</p>
+{{ chart_data|json_script:"chart-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  if (typeof Chart === "undefined") return;  // charts are extra; the figures above still show
+  const data = JSON.parse(document.getElementById("chart-data").textContent);
+  const navy = "#0b2e6b", gold = "#f2b705", crimson = "#cc0a5a", green = "#2e7d32", grey = "#9aa5b1";
+  const palette = [grey, "#0c549c", navy, "#4c9a6a", crimson, gold, green, "#6d4c41", "#000000"];
+  const money = (v) => "UGX " + Number(v).toLocaleString("en-GB");
+  new Chart(document.getElementById("statusChart"), {
+    type: "doughnut",
+    data: { labels: data.status_labels, datasets: [{ data: data.status_counts, backgroundColor: palette }] },
+    options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } } } },
+  });
+  new Chart(document.getElementById("verificationChart"), {
+    type: "doughnut",
+    data: { labels: ["Verified", "Waiting for LC I", "Rejected"], datasets: [{ data: data.verification, backgroundColor: [green, gold, crimson] }] },
+    options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } } } },
+  });
+  new Chart(document.getElementById("moneyChart"), {
+    type: "bar",
+    data: { labels: data.units, datasets: [
+      { label: "Paid out", data: data.disbursed, backgroundColor: navy },
+      { label: "Repaid", data: data.repaid, backgroundColor: green },
+      { label: "In arrears", data: data.arrears, backgroundColor: crimson },
+    ] },
+    options: {
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } }, tooltip: { callbacks: { label: (c) => c.dataset.label + ": " + money(c.raw) } } },
+      scales: { y: { ticks: { callback: (v) => Number(v).toLocaleString("en-GB") } } },
+    },
+  });
+})();
+</script>
+{% endblock %}

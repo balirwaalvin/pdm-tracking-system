@@ -18,6 +18,7 @@
               Whole country
             {% endif %}
           </p>
+          {% if user.role and user.role != "Household" and user.role != "LC I Chairperson" %}<a class="btn btn-pdm btn-sm mt-3" href="{% url 'dashboard' %}">Open the dashboard</a>{% endif %}
         </div>
       </div>
     {% else %}
