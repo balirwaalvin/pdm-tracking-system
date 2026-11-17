@@ -18,7 +18,8 @@ Under active development: a functional prototype within 10 days. See [docs/PROGR
 - **Loans:** the group executive applies (up to UGX 1,000,000, verified members only); the SACCO appraises, approves or rejects with reasons, and records the disbursement. A payout cannot exceed the approved amount or the SACCO's confirmed funds.
 - **Repayment:** a monthly schedule at 6% a year (flat over the term) on every paid-out loan. The SACCO records repayments; the system moves the loan to Repaying and then Closed, lists arrears, and flags a loan as Defaulted once an instalment is 90 days overdue (`python manage.py flag_defaults`, also run on every deploy).
 - **USSD and SMS (Africa's Talking):** a household dials the PDM short code to see its verification and loan status (balance, next instalment, arrears). It gets an SMS when its loan is approved or rejected, paid out, and repaid. Every SMS is kept on the loan page. Officials can try the menu at **USSD** in the navigation (`/ussd/simulator/`), only as households in their own area.
-- **Audit trail:** every change is logged with who made it and when.
+- **Dashboards:** totals and Chart.js charts for the user's own area, split one level down (national by district, district by sub-county, sub-county by parish, parish by village): households and verification, inclusion, money paid out, repaid and in arrears, and portfolio at risk.
+- **Audit trail:** every change is logged with who made it and when. The auditor has a read-only audit log page (`/audit/`) with filters and a CSV download.
 
 Every page checks the user's role and shows only records in the user's own area.
 
