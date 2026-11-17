@@ -37,6 +37,10 @@
       {% endfor %}</tbody>
     </table></div>
   {% endif %}
+  {% with repayments=loan.repayments.all %}{% if repayments %}
+    <h3 class="h6 mt-3">Receipts</h3>
+    <ul class="small mb-0">{% for r in repayments %}<li><a href="{% url 'loans:repayment_receipt' r.pk %}">{{ r.receipt_number }}</a> · UGX {{ r.amount|intcomma }} on {{ r.paid_on|date:"j M Y" }}</li>{% endfor %}</ul>
+  {% endif %}{% endwith %}
   {% if item.sms %}
     <h3 class="h6 mt-3">SMS alerts sent to you</h3>
     <ul class="small mb-0">{% for sms in item.sms %}<li>{{ sms.created_at|date:"j M Y" }}: {{ sms.message }}</li>{% endfor %}</ul>

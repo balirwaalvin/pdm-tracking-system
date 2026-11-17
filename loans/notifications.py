@@ -51,5 +51,7 @@ def notify_repayment(repayment):
     else:
         tail = f"Balance UGX {loan.balance:,}."
     _send_after_commit(
-        loan, f"PDM: {loan.sacco.name} received UGX {repayment.amount:,} on {repayment.paid_on:%d %b %Y}. {tail}"
+        loan,
+        f"PDM: {loan.sacco.name} received UGX {repayment.amount:,} on {repayment.paid_on:%d %b %Y}, "
+        f"receipt {repayment.receipt_number}. {tail}",
     )

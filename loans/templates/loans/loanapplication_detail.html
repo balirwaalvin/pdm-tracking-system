@@ -88,7 +88,7 @@
       <h2 class="h6 text-uppercase text-muted">Repayments</h2>
       <ul class="list-unstyled small mb-0">
         {% for repayment in repayments %}
-          <li class="mb-1">{{ repayment.paid_on|date:"j M Y" }} · UGX <strong>{{ repayment.amount|intcomma }}</strong> by {{ repayment.get_method_display|lower }} · ref. {{ repayment.reference }} · recorded by {{ repayment.recorded_by }}</li>
+          <li class="mb-1">{{ repayment.paid_on|date:"j M Y" }} · UGX <strong>{{ repayment.amount|intcomma }}</strong> by {{ repayment.get_method_display|lower }} · ref. {{ repayment.reference }} · recorded by {{ repayment.recorded_by|default:"-" }} · <a href="{% url 'loans:repayment_receipt' repayment.pk %}">{{ repayment.receipt_number }}</a></li>
         {% empty %}<li class="text-muted">No repayments yet.</li>{% endfor %}
       </ul>
     </div></div>
