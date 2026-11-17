@@ -105,6 +105,7 @@ class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         )
         if context["can_decide"]:
             context["decision_form"] = DecisionForm()
+        context["sms_messages"] = loan.sms_messages.all()
         context["history"] = LogEntry.objects.get_for_object(loan).select_related("actor").order_by("timestamp")
         return context
 

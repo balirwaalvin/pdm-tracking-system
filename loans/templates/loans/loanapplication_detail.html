@@ -102,6 +102,15 @@
         {% empty %}<li class="text-muted">No history yet.</li>{% endfor %}
       </ol>
     </div></div>
+
+    <div class="card shadow-sm mt-3"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">SMS alerts to the household</h2>
+      <ul class="list-unstyled small mb-0">
+        {% for sms in sms_messages %}
+          <li class="mb-2"><strong>{{ sms.created_at|date:"j M Y, H:i" }}</strong> · {{ sms.get_status_display }}<br>{{ sms.message }}</li>
+        {% empty %}<li class="text-muted">No alerts yet.</li>{% endfor %}
+      </ul>
+    </div></div>
   </div>
 </div>
 {% endblock %}
