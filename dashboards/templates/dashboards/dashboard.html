@@ -72,7 +72,7 @@
   if (typeof Chart === "undefined") return;  // charts are extra; the figures above still show
   const data = JSON.parse(document.getElementById("chart-data").textContent);
   const navy = "#0b2e6b", gold = "#f2b705", crimson = "#cc0a5a", green = "#2e7d32", grey = "#9aa5b1";
-  const palette = [grey, "#0c549c", navy, "#4c9a6a", crimson, gold, green, "#6d4c41", "#000000"];
+  const palette = [grey, "#0c549c", navy, "#00897b", crimson, gold, green, "#6d4c41", "#000000"];
   const money = (v) => "UGX " + Number(v).toLocaleString("en-GB");
   new Chart(document.getElementById("statusChart"), {
     type: "doughnut",
