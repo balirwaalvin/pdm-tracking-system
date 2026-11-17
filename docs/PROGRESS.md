@@ -40,6 +40,8 @@ Day 1 was Tue 17 Nov 2026; Day 10 is Thu 26 Nov 2026; the buffer runs to Mon 30 
 - [x] Dashboard page with totals and Chart.js charts from a CDN.
 - [x] Audit log page for the auditor role (read-only).
 
+> **Revised 17 Nov 2026:** the presentation is on Thu 26 Nov, so Days 9–14 below are replaced by [ROADMAP.md](ROADMAP.md). They stay here for the record.
+
 ## Day 9: citizen voice (Should)
 
 - [ ] Complaints by USSD with a reference number, in the `feedback` app.
