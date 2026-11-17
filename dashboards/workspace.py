@@ -9,6 +9,7 @@ from django.urls import reverse
 
 from accounts import roles as r
 from accounts.scoping import scope_queryset
+from feedback.models import Complaint
 from loans.models import LoanApplication
 from loans.workflow import ACTIVE_STATUSES
 from registry.models import EnterpriseGroup, Household
@@ -51,6 +52,15 @@ def _arrears_item(user):
     return _item("Loans in arrears", _in_arrears(user), reverse("loans:arrears_list"), "Follow up with the household and SACCO.")
 
 
+def _complaints_item(user, level):
+    """Unresolved complaints waiting at this user's level, in their area."""
+    waiting = scope_queryset(Complaint.objects.all(), user, "household__village").filter(level=level).exclude(
+        status=Complaint.Status.RESOLVED
+    )
+    url = f"{reverse('feedback:complaint_list')}?status=unresolved&level={level}"
+    return _item("Complaints for your office", waiting.count(), url, "Resolve within 7 days or they move up a level.")
+
+
 def tasks_for(user):
     """Work waiting for this user, by role."""
     role = user.role
@@ -71,6 +81,7 @@ def tasks_for(user):
                   households.filter(verification=Verification.VERIFIED, enterprise_group=None).count(),
                   _household_list(Verification.VERIFIED), "They need a group before they can borrow."),
             _arrears_item(user),
+            _complaints_item(user, Complaint.Level.PARISH),
         ]
     if role == r.GROUP_EXECUTIVE:
         loans = _loans(user)
@@ -116,6 +127,7 @@ def tasks_for(user):
             _item("Households waiting for LC I", _households(user).filter(verification=Verification.PENDING).count(),
                   _household_list(Verification.PENDING)),
             _arrears_item(user),
+            _complaints_item(user, Complaint.Level.SUBCOUNTY),
         ]
     if role == r.DISTRICT_OFFICIAL:
         releases = scope_queryset(FundRelease.objects.filter(confirmed_at=None), user, "sacco__parish")
@@ -124,6 +136,7 @@ def tasks_for(user):
                   "Confirm once the money reaches the SACCO's account."),
             _item("SACCOs not yet eligible", sum(1 for s in _saccos(user) if not s.is_eligible), reverse("saccos:sacco_list")),
             _arrears_item(user),
+            _complaints_item(user, Complaint.Level.DISTRICT),
         ]
     if role == r.NATIONAL_OFFICIAL:
         saccos = list(_saccos(user).prefetch_related("releases"))
@@ -133,6 +146,9 @@ def tasks_for(user):
             _item("Releases not yet confirmed by the district",
                   FundRelease.objects.filter(confirmed_at=None).count(), reverse("saccos:sacco_list")),
             _item("Defaulted loans", _loans(user).filter(status=Status.DEFAULTED).count(), _loan_list(Status.DEFAULTED)),
+            _item("Bribery complaints not resolved",
+                  Complaint.objects.filter(category=Complaint.Category.BRIBERY).exclude(status=Complaint.Status.RESOLVED).count(),
+                  f"{reverse('feedback:complaint_list')}?status=unresolved"),
         ]
     if role == r.AUDITOR:
         from auditlog.models import LogEntry
