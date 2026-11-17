@@ -20,3 +20,4 @@ body { background: var(--pdm-light); }
 .ussd-phone { max-width: 320px; background: #222; border-radius: 1.5rem; padding: 1.25rem; }
 .ussd-screen { background: #e9f1e4; color: #111; font-family: monospace; min-height: 180px; padding: .75rem; border-radius: .5rem; white-space: normal; }
 .ussd-phone .form-control { font-family: monospace; }
+.ussd-phone > .small { color: #ccc !important; }
