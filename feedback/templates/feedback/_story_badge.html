@@ -1,0 +1,1 @@
+{% with s=story.status %}<span class="badge {% if s == 'approved' %}text-bg-success{% elif s == 'submitted' %}text-bg-warning{% elif s == 'rejected' %}text-bg-danger{% else %}text-bg-secondary{% endif %}">{{ story.get_status_display }}</span>{% endwith %}
