@@ -255,3 +255,50 @@ class SimulatorTests(TestCase):
         response = self.client.get(reverse("ussd:simulator"))
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login/", response.url)
+
+
+class LugandaTests(TestCase):
+    """Households can use the USSD menu in Luganda; the choice is remembered."""
+
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def dial(self, text, phone="+256700000023"):  # Henry, a loan in arrears
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse("ussd:callback"), {"phoneNumber": phone, "text": text}, HTTP_HOST="localhost")
+        return response.content.decode()
+
+    def test_zero_switches_to_luganda_and_is_remembered(self):
+        self.assertIn("0. Luganda", self.dial(""))
+        self.assertIn("2. Looni yange", self.dial("0"))
+        self.assertEqual(Household.objects.get(phone="256700000023").language, "lg")
+        self.assertIn("Looni yange", self.dial(""))  # next call starts in Luganda
+
+    def test_switching_back_to_english(self):
+        self.dial("0")
+        self.assertIn("2. My loan", self.dial("0"))
+        self.assertEqual(Household.objects.get(phone="256700000023").language, "en")
+
+    def test_every_path_answers_in_luganda(self):
+        Household.objects.filter(phone="256700000023").update(language="lg")
+        self.assertIn("LC I akakasizza", self.dial("1"))
+        self.assertIn("Ebibuze UGX", self.dial("2"))
+        self.assertIn("Bansaba enguzi", self.dial("3"))
+        self.assertIn("Nnyonnyola", self.dial("3*1"))
+        self.assertIn("Kifunidwa. Namba PDM-", self.dial("3*1*Looni yange teyampeebwa"))
+        self.assertIn("Tewali kwemulugunya", self.dial("4*999999"))
+
+    def test_luganda_replies_fit_one_screen(self):
+        for household in Household.objects.exclude(phone=""):
+            household.language = "lg"
+            household.save(update_fields=["language"])
+            for text in ("", "1", "2", "3", "3*1", "4"):
+                self.assertLessEqual(len(self.dial(text, household.phone)), MAX_LENGTH, (household.phone, text))
+
+    def test_every_text_has_a_luganda_version(self):
+        from .texts import CATEGORY_LABELS, TEXTS, WORDS
+
+        self.assertEqual(set(TEXTS["en"]), set(TEXTS["lg"]))
+        self.assertEqual(len(CATEGORY_LABELS["en"]), len(CATEGORY_LABELS["lg"]))
+        self.assertEqual(set(WORDS["en"]), set(WORDS["lg"]))
