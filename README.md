@@ -69,6 +69,8 @@ python manage.py test
 
 ## Deploy
 
+Live at **https://pdm.treez.tech** (custom domain; the Render address https://pdm-tracking-system.onrender.com also works). The DNS is a CNAME in Cloudflare, set to DNS only so Render can issue the TLS certificate.
+
 The repository includes a Render blueprint (`render.yaml`). In Render, choose **New → Blueprint**, connect this repository, and Render creates the web service and a free PostgreSQL database.
 
 ## Tech stack
