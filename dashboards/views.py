@@ -6,12 +6,15 @@ import datetime
 from auditlog.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.generic import ListView, TemplateView
 
 from accounts import access
 from accounts.mixins import RoleRequiredMixin
+from registry.models import AdminUnit
 
-from . import queries, workspace
+from . import public, queries, workspace
 
 DASHBOARD_ROLES = access.roles_for("dashboard")  # from the access policy
 
@@ -157,3 +160,38 @@ class AuditLogView(RoleRequiredMixin, ListView):
         query.pop("page", None)
         context["query_string"] = query.urlencode()
         return context
+
+
+# Public pages: no login. Only anonymised totals and approved, consented stories.
+
+
+class PublicParishListView(TemplateView):
+    template_name = "dashboards/public_parish_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["parishes"] = AdminUnit.objects.filter(level=AdminUnit.Level.PARISH).select_related("parent__parent")
+        return context
+
+
+class PublicParishView(TemplateView):
+    template_name = "dashboards/public_parish.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        parish = get_object_or_404(AdminUnit, pk=kwargs["pk"], level=AdminUnit.Level.PARISH)
+        context.update(parish=parish, figures=public.parish_figures(parish), stories=public.approved_stories(parish))
+        return context
+
+
+def parish_open_data(request, pk):
+    """The public parish figures as CSV, for anyone to download and reuse."""
+    parish = get_object_or_404(AdminUnit, pk=pk, level=AdminUnit.Level.PARISH)
+    figures = public.parish_figures(parish)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="pdm-{parish.name.lower()}-parish.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["parish", "measure", "value", "as_of"])
+    for measure, value in figures.items():
+        writer.writerow([parish.name, measure, "" if value is None else value, timezone.localdate().isoformat()])
+    return response
