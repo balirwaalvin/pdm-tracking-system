@@ -178,6 +178,14 @@ class Household(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    class Language(models.TextChoices):
+        ENGLISH = "en", "English"
+        LUGANDA = "lg", "Luganda"
+
+    language = models.CharField(
+        "USSD language", max_length=2, choices=Language.choices, default=Language.ENGLISH,
+        help_text="The household chooses it on the USSD menu; it is remembered for the next call.",
+    )
     account = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         null=True,
