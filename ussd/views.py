@@ -5,15 +5,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 
-from accounts import roles
+from accounts import access
 from accounts.mixins import RoleRequiredMixin
 from accounts.scoping import scope_queryset
 from registry.models import Household
 
 from .menu import respond
 
-# Every official role; households use their own phones.
-SIMULATOR_ROLES = tuple(role for role in roles.ALL_ROLES if role != roles.HOUSEHOLD)
+SIMULATOR_ROLES = access.roles_for("ussd_simulator")  # from the access policy
 
 
 @csrf_exempt

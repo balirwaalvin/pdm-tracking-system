@@ -79,14 +79,14 @@ class DashboardPageTests(TestCase):
         return self.client.get(reverse("dashboard"))
 
     def test_officials_from_parish_to_national_see_the_dashboard(self):
-        for username in ("groupexec", "parishchief", "pdc", "sacco", "subcounty", "district", "national", "auditor"):
+        for username in ("parishchief", "pdc", "sacco", "subcounty", "district", "national", "auditor"):
             response = self.get(username)
             self.assertEqual(response.status_code, 200, username)
             self.assertContains(response, "statusChart")
             self.assertContains(response, 'id="chart-data"')
 
-    def test_household_and_lc1_cannot_open_it(self):
-        for username in ("household", "lc1"):
+    def test_village_and_group_roles_cannot_open_it(self):
+        for username in ("household", "lc1", "groupexec"):
             self.assertEqual(self.get(username).status_code, 403, username)
 
     def test_logged_out_users_are_sent_to_login(self):

@@ -1,6 +1,5 @@
 from auditlog.models import LogEntry
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
@@ -8,9 +7,9 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView
 
-from accounts import roles
+from accounts import access
 from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_required
-from accounts.scoping import check_unit_in_scope, scope_queryset
+from accounts.scoping import check_unit_in_scope
 
 from . import notifications, workflow
 from .forms import AppraisalForm, DecisionForm, DisbursementForm, LoanApplicationForm, RepaymentForm
@@ -18,16 +17,8 @@ from .models import LoanApplication
 
 Status = LoanApplication.Status
 
-LOAN_VIEW_ROLES = (
-    roles.GROUP_EXECUTIVE,
-    roles.PARISH_CHIEF,
-    roles.PDC,
-    roles.SACCO_OFFICIAL,
-    roles.SUBCOUNTY_OFFICIAL,
-    roles.DISTRICT_OFFICIAL,
-    roles.NATIONAL_OFFICIAL,
-    roles.AUDITOR,
-)
+LOAN_VIEW_ROLES = access.roles_for("loans")  # from the access policy
+SACCO_LOAN_ROLES = access.roles_for("appraise_loan")
 
 
 class LoanListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
@@ -50,7 +41,7 @@ class LoanListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["statuses"] = Status.choices
-        context["can_apply"] = self.request.user.has_role(roles.GROUP_EXECUTIVE)
+        context["can_apply"] = access.allows(self.request.user, "apply_loan")
         return context
 
 
@@ -59,7 +50,7 @@ class LoanCreateView(RoleRequiredMixin, CreateView):
 
     model = LoanApplication
     form_class = LoanApplicationForm
-    allowed_roles = (roles.GROUP_EXECUTIVE,)
+    allowed_roles = access.roles_for("apply_loan")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -101,7 +92,7 @@ class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         context["schedule"] = loan.schedule_with_status()
         context["repayments"] = loan.repayments.select_related("recorded_by")
         context["can_repay"] = loan.status in workflow.ACTIVE_STATUSES and (
-            user.is_superuser or user.has_role(roles.SACCO_OFFICIAL)
+            access.allows(user, "appraise_loan")
         )
         if context["can_decide"]:
             context["decision_form"] = DecisionForm()
@@ -117,7 +108,7 @@ def _get_scoped_loan(request, pk):
 
 
 @require_POST
-@role_required(roles.GROUP_EXECUTIVE)
+@role_required(*access.roles_for("apply_loan"))
 def submit_loan(request, pk):
     loan = _get_scoped_loan(request, pk)
     try:
@@ -133,7 +124,7 @@ class AppraisalCreateView(RoleRequiredMixin, CreateView):
     """The SACCO Loan Committee scores a submitted application and gives reasons."""
 
     form_class = AppraisalForm
-    allowed_roles = (roles.SACCO_OFFICIAL,)
+    allowed_roles = SACCO_LOAN_ROLES
     template_name = "loans/appraisal_form.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -166,7 +157,7 @@ class AppraisalCreateView(RoleRequiredMixin, CreateView):
 
 
 @require_POST
-@role_required(roles.SACCO_OFFICIAL)
+@role_required(*SACCO_LOAN_ROLES)
 def decide_loan(request, pk):
     """The SACCO approves or rejects an appraised application. A rejection must give a reason."""
     loan = _get_scoped_loan(request, pk)
@@ -196,7 +187,7 @@ class DisbursementCreateView(RoleRequiredMixin, CreateView):
     """The SACCO records paying out an approved loan, which moves it to Disbursed."""
 
     form_class = DisbursementForm
-    allowed_roles = (roles.SACCO_OFFICIAL,)
+    allowed_roles = SACCO_LOAN_ROLES
     template_name = "loans/disbursement_form.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -245,7 +236,7 @@ class RepaymentCreateView(RoleRequiredMixin, CreateView):
     """The SACCO records a repayment. The system then moves the loan to Repaying or Closed."""
 
     form_class = RepaymentForm
-    allowed_roles = (roles.SACCO_OFFICIAL,)
+    allowed_roles = SACCO_LOAN_ROLES
     template_name = "loans/repayment_form.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -293,7 +284,7 @@ class ArrearsListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
     """Paid-out loans with instalments overdue, oldest arrears first."""
 
     model = LoanApplication
-    allowed_roles = LOAN_VIEW_ROLES
+    allowed_roles = access.roles_for("arrears")
     unit_field = "household__village"
     template_name = "loans/arrears_list.html"
     context_object_name = "rows"

@@ -8,24 +8,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponse
 from django.views.generic import ListView, TemplateView
 
-from accounts import roles
+from accounts import access
 from accounts.mixins import RoleRequiredMixin
 from accounts.scoping import scope_queryset
 from registry.models import AdminUnit
 
 from . import queries
 
-# Officials who oversee a parish or more (households and LC I work at village level).
-DASHBOARD_ROLES = (
-    roles.GROUP_EXECUTIVE,
-    roles.PARISH_CHIEF,
-    roles.PDC,
-    roles.SACCO_OFFICIAL,
-    roles.SUBCOUNTY_OFFICIAL,
-    roles.DISTRICT_OFFICIAL,
-    roles.NATIONAL_OFFICIAL,
-    roles.AUDITOR,
-)
+DASHBOARD_ROLES = access.roles_for("dashboard")  # from the access policy
 
 
 class HomeView(TemplateView):
@@ -83,7 +73,7 @@ class AuditLogView(RoleRequiredMixin, ListView):
     Add ?format=csv to download the filtered entries.
     """
 
-    allowed_roles = (roles.AUDITOR,)
+    allowed_roles = access.roles_for("audit_log")
     template_name = "dashboards/audit_log.html"
     context_object_name = "entries"
     paginate_by = 50

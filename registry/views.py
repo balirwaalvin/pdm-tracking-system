@@ -6,25 +6,16 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from accounts import roles
+from accounts import access
 from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_required
 from accounts.scoping import check_unit_in_scope
 
 from .forms import EnterpriseGroupForm, HouseholdForm
 from .models import EnterpriseGroup, Household
 
-# Roles that may look at household records.
-HOUSEHOLD_VIEW_ROLES = (
-    roles.GROUP_EXECUTIVE,
-    roles.LC1_CHAIRPERSON,
-    roles.PARISH_CHIEF,
-    roles.PDC,
-    roles.SACCO_OFFICIAL,
-    roles.SUBCOUNTY_OFFICIAL,
-    roles.DISTRICT_OFFICIAL,
-    roles.NATIONAL_OFFICIAL,
-    roles.AUDITOR,
-)
+# Who may open what comes from the access policy (accounts/access.py).
+HOUSEHOLD_VIEW_ROLES = access.roles_for("households")
+GROUP_VIEW_ROLES = access.roles_for("groups")
 
 
 class HouseholdListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
@@ -46,7 +37,7 @@ class HouseholdListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["statuses"] = Household.Verification.choices
-        context["can_register"] = self.request.user.has_role(roles.PARISH_CHIEF)
+        context["can_register"] = access.allows(self.request.user, "register_household")
         return context
 
 
@@ -55,7 +46,7 @@ class HouseholdCreateView(RoleRequiredMixin, CreateView):
 
     model = Household
     form_class = HouseholdForm
-    allowed_roles = (roles.PARISH_CHIEF,)
+    allowed_roles = access.roles_for("register_household")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -84,9 +75,9 @@ class HouseholdDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        context["can_edit"] = user.has_role(roles.PARISH_CHIEF)
+        context["can_edit"] = access.allows(user, "register_household")
         context["can_verify"] = (
-            user.has_role(roles.LC1_CHAIRPERSON)
+            access.allows(user, "verify_household")
             and self.object.verification == Household.Verification.PENDING
         )
         return context
@@ -97,7 +88,7 @@ class HouseholdUpdateView(RoleRequiredMixin, ScopedQuerysetMixin, UpdateView):
 
     model = Household
     form_class = HouseholdForm
-    allowed_roles = (roles.PARISH_CHIEF,)
+    allowed_roles = access.roles_for("register_household")
     unit_field = "village"
     RECHECK_FIELDS = {"nin", "village", "wealth_rank"}
 
@@ -122,7 +113,7 @@ class HouseholdUpdateView(RoleRequiredMixin, ScopedQuerysetMixin, UpdateView):
 
 
 @require_POST
-@role_required(roles.LC1_CHAIRPERSON)
+@role_required(*access.roles_for("verify_household"))
 def verify_household(request, pk):
     """The LC I Chairperson confirms or rejects a household in their own village."""
     household = get_object_or_404(Household.objects.select_related("village"), pk=pk)
@@ -154,7 +145,7 @@ def verify_household(request, pk):
 
 class EnterpriseGroupListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
     model = EnterpriseGroup
-    allowed_roles = HOUSEHOLD_VIEW_ROLES
+    allowed_roles = GROUP_VIEW_ROLES
     unit_field = "parish"
     template_name = "registry/group_list.html"
     context_object_name = "groups"
@@ -166,7 +157,7 @@ class EnterpriseGroupListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["can_register"] = self.request.user.has_role(roles.SUBCOUNTY_OFFICIAL)
+        context["can_register"] = access.allows(self.request.user, "register_group")
         return context
 
 
@@ -175,7 +166,7 @@ class EnterpriseGroupCreateView(RoleRequiredMixin, CreateView):
 
     model = EnterpriseGroup
     form_class = EnterpriseGroupForm
-    allowed_roles = (roles.SUBCOUNTY_OFFICIAL,)
+    allowed_roles = access.roles_for("register_group")
     template_name = "registry/group_form.html"
 
     def get_form_kwargs(self):
@@ -194,7 +185,7 @@ class EnterpriseGroupCreateView(RoleRequiredMixin, CreateView):
 
 class EnterpriseGroupDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
     model = EnterpriseGroup
-    allowed_roles = HOUSEHOLD_VIEW_ROLES
+    allowed_roles = GROUP_VIEW_ROLES
     unit_field = "parish"
     template_name = "registry/group_detail.html"
     context_object_name = "group"
