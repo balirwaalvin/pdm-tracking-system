@@ -4,6 +4,18 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def clear_duplicate_phones(apps, schema_editor):
+    """Keep each number on the oldest household; clear it on later ones so the constraint can be added."""
+    Household = apps.get_model("registry", "Household")
+    seen = set()
+    for household in Household.objects.exclude(phone="").order_by("created_at", "pk"):
+        if household.phone in seen:
+            household.phone = ""
+            household.save(update_fields=["phone"])
+        else:
+            seen.add(household.phone)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -12,6 +24,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(clear_duplicate_phones, migrations.RunPython.noop),
         migrations.AddConstraint(
             model_name="household",
             constraint=models.UniqueConstraint(
