@@ -165,7 +165,10 @@ class Command(BaseCommand):
                 "enterprise_group": groups.get(group),
                 "registered_by": parish_chief,
             }
-            if verified:
+            already_verified = Household.objects.filter(
+                nin=nin, verification=Household.Verification.VERIFIED
+            ).exists()
+            if verified and not already_verified:  # keep the original date, and the audit log quiet
                 defaults.update(
                     verification=Household.Verification.VERIFIED,
                     verified_by=lc1,
