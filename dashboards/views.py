@@ -60,6 +60,7 @@ class MyHouseholdView(RoleRequiredMixin, TemplateView):
             context["loans"] = [
                 {"loan": loan, "schedule": loan.schedule_with_status(), "sms": loan.sms_messages.all()} for loan in loans
             ]
+            context["complaints"] = household.complaints.prefetch_related("responses")
         return context
 
 
