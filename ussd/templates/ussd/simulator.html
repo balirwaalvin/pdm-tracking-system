@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}USSD simulator · PDM Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">USSD simulator</h1>
+<p class="text-muted">Runs the same menu a household reaches by dialling the PDM short code on any phone. Choose a sample household in your area and dial.</p>
+<div class="row g-4">
+  <div class="col-md-5">
+    <form method="post" class="card shadow-sm"><div class="card-body">{% csrf_token %}
+      <label class="form-label" for="phone">Dial as</label>
+      <select class="form-select mb-3" id="phone" name="phone">
+        {% for household in households %}<option value="{{ household.phone }}" {% if household.phone == phone %}selected{% endif %}>{{ household.head_name }} · {{ household.village.name }} · {{ household.phone }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-pdm" name="action" value="dial">Dial *384*1#</button>
+      {% if error %}<div class="alert alert-danger mt-3 mb-0">{{ error }}</div>{% endif %}
+    </div></form>
+  </div>
+  <div class="col-md-5">
+    <div class="ussd-phone mx-auto">
+      <div class="ussd-screen">{% if screen %}{{ screen|linebreaksbr }}{% else %}<span class="text-muted">Dial to start a session.</span>{% endif %}</div>
+      {% if waiting %}
+        <form method="post" class="d-flex gap-2 mt-2">{% csrf_token %}
+          <input type="hidden" name="phone" value="{{ phone }}"><input type="hidden" name="session_text" value="{{ session_text }}">
+          <input class="form-control" name="answer" inputmode="numeric" autocomplete="off" autofocus aria-label="Your answer">
+          <button class="btn btn-pdm" name="action" value="send">Send</button>
+        </form>
+      {% elif screen %}<p class="small text-muted mt-2 mb-0">Session ended.</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

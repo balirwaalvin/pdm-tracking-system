@@ -25,6 +25,7 @@
             <li class="nav-item"><a class="nav-link" href="{% url 'saccos:sacco_list' %}">SACCOs</a></li>
             <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan_list' %}">Loans</a></li>
             {% endif %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'ussd:simulator' %}">USSD</a></li>
           {% endif %}
           {% block nav_links %}{% endblock %}
         </ul>

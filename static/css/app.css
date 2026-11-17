@@ -15,3 +15,8 @@ body { background: var(--pdm-light); }
 .text-crimson { color: var(--pdm-crimson); }
 .card-stat .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--pdm-navy); }
 .prototype-banner { background: var(--pdm-gold); color: #14213d; font-size: .85rem; }
+
+/* USSD simulator: a plain phone screen */
+.ussd-phone { max-width: 320px; background: #222; border-radius: 1.5rem; padding: 1.25rem; }
+.ussd-screen { background: #e9f1e4; color: #111; font-family: monospace; min-height: 180px; padding: .75rem; border-radius: .5rem; white-space: normal; }
+.ussd-phone .form-control { font-family: monospace; }
