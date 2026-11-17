@@ -17,6 +17,7 @@ Under active development: a functional prototype within 10 days. See [docs/PROGR
 - **SACCOs:** a seven-point eligibility checklist; the national office records fund releases and the district confirms them.
 - **Loans:** the group executive applies (up to UGX 1,000,000, verified members only); the SACCO appraises, approves or rejects with reasons, and records the disbursement. A payout cannot exceed the approved amount or the SACCO's confirmed funds.
 - **Repayment:** a monthly schedule at 6% a year (flat over the term) on every paid-out loan. The SACCO records repayments; the system moves the loan to Repaying and then Closed, lists arrears, and flags a loan as Defaulted once an instalment is 90 days overdue (`python manage.py flag_defaults`, also run on every deploy).
+- **USSD and SMS (Africa's Talking):** a household dials the PDM short code to see its verification and loan status (balance, next instalment, arrears). It gets an SMS when its loan is approved or rejected, paid out, and repaid. Every SMS is kept on the loan page. Officials can try the menu at **USSD** in the navigation (`/ussd/simulator/`), only as households in their own area.
 - **Audit trail:** every change is logged with who made it and when.
 
 Every page checks the user's role and shows only records in the user's own area.
@@ -60,6 +61,12 @@ Open http://127.0.0.1:8000.
 The seed also adds 14 sample households, 3 enterprise groups, 2 SACCOs (Seeta is eligible; Nantabulirwa still lacks its Supervisory Board) and a loan at each stage: submitted, appraised, approved, rejected, disbursed, repaying with arrears, and defaulted.
 
 These are sample people and places for demonstration only.
+
+## Africa's Talking (USSD and SMS)
+
+The USSD callback is `POST /ussd/callback/` (no login; Africa's Talking sends `sessionId`, `serviceCode`, `phoneNumber` and `text`). In the Africa's Talking sandbox, create a USSD channel and set its callback URL to `https://pdm.treez.tech/ussd/callback/`.
+
+SMS alerts need `AT_USERNAME`, `AT_API_KEY` and (optionally) `AT_SENDER_ID`. Without `AT_API_KEY` the alerts are saved and logged but not sent, so the system works fully without an account.
 
 ## Run the tests
 
