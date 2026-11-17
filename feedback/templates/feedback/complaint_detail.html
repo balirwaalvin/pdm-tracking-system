@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{{ complaint.reference }} · PDM Tracking System{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'feedback:complaint_list' %}">Complaints</a></li><li class="breadcrumb-item active">{{ complaint.reference }}</li></ol></nav>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <h1 class="h3 mb-1">{{ complaint.reference }}: {{ complaint.get_category_display }}</h1>
+    <p class="text-muted mb-0">{{ complaint.household.head_name }} · {{ complaint.household.village.name }} · by {{ complaint.get_channel_display }} on {{ complaint.created_at|date:"j M Y, H:i" }}</p>
+  </div>
+  <div>{% include "feedback/_status_badge.html" %}</div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm mb-3"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">What the household said</h2>
+      <p class="mb-0">{{ complaint.description|linebreaksbr }}</p>
+    </div></div>
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Responses</h2>
+      {% for response in responses %}
+        <div class="mb-3"><strong>{{ response.responded_by }}</strong> · {{ response.created_at|date:"j M Y, H:i" }} · {{ response.get_status_after_display }}<br>{{ response.message|linebreaksbr }}</div>
+      {% empty %}<p class="text-muted">No response yet.</p>{% endfor %}
+      {% if response_form %}
+        <hr><h3 class="h6">Respond</h3>
+        <form method="post" action="{% url 'feedback:complaint_respond' complaint.pk %}" novalidate>{% csrf_token %}
+          {{ response_form|crispy }}
+          <button class="btn btn-pdm">Save and text the household</button>
+        </form>
+      {% endif %}
+    </div></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Handling</h2>
+      <dl class="row mb-0 small">
+        <dt class="col-6">With</dt><dd class="col-6">{{ complaint.get_level_display }} office</dd>
+        <dt class="col-6">Escalations</dt><dd class="col-6">{{ complaint.escalation_count }}</dd>
+        {% if complaint.response_due %}<dt class="col-6">Resolve by</dt><dd class="col-6 {% if complaint.is_overdue %}text-danger fw-bold{% endif %}">{{ complaint.response_due|date:"j M Y" }}</dd>{% endif %}
+        {% if complaint.resolved_at %}<dt class="col-6">Resolved</dt><dd class="col-6">{{ complaint.resolved_at|date:"j M Y" }}</dd>{% endif %}
+      </dl>
+      {% if not response_form and complaint.status != "resolved" %}<p class="small text-muted mt-3 mb-0">Only the {{ complaint.get_level_display|lower }} office can respond at this stage.</p>{% endif %}
+    </div></div>
+  </div>
+</div>
+{% endblock %}

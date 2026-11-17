@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Complaints · PDM Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Complaints</h1>
+<p class="text-muted">From households in your area, by USSD or the web. A complaint not resolved within 7 days moves up a level: parish, then sub-county, then district. Bribery complaints start at the sub-county.</p>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-4"><select class="form-select" name="status" aria-label="Status"><option value="">All statuses</option><option value="unresolved" {% if request.GET.status == "unresolved" %}selected{% endif %}>Not resolved</option>{% for value, label in statuses %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <div class="col-md-4"><select class="form-select" name="level" aria-label="Level"><option value="">All levels</option>{% for value, label in levels %}<option value="{{ value }}" {% if request.GET.level == value %}selected{% endif %}>With the {{ label|lower }} office</option>{% endfor %}</select></div>
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100">Filter</button></div>
+</form>
+<div class="card shadow-sm"><div class="table-responsive">
+  <table class="table table-hover mb-0 align-middle">
+    <thead class="table-light"><tr><th>Reference</th><th>Household</th><th>About</th><th>With</th><th>Received</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for complaint in complaints %}
+      <tr>
+        <td><a href="{% url 'feedback:complaint_detail' complaint.pk %}">{{ complaint.reference }}</a></td>
+        <td>{{ complaint.household.head_name }}<div class="small text-muted">{{ complaint.household.village.name }}</div></td>
+        <td>{{ complaint.get_category_display }}<div class="small text-muted">{{ complaint.get_channel_display }}</div></td>
+        <td>{{ complaint.get_level_display }}{% if complaint.escalation_count %} <span class="small text-muted">(escalated)</span>{% endif %}</td>
+        <td class="text-nowrap">{{ complaint.created_at|date:"j M Y" }}</td>
+        <td>{% include "feedback/_status_badge.html" %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="6" class="text-muted text-center py-4">No complaints found.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% include "_pagination.html" %}
+{% endblock %}
