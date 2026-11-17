@@ -27,6 +27,7 @@
         <ul class="navbar-nav">
           {% if user.is_authenticated %}
             <li class="nav-item"><span class="nav-link">{{ user }}{% if user.role %} · {{ user.role }}{% endif %}</span></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'password_change' %}">Password</a></li>
             <li class="nav-item">
               <form method="post" action="{% url 'logout' %}" class="d-inline">
                 {% csrf_token %}
