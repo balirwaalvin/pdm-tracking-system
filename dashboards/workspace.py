@@ -125,8 +125,9 @@ def tasks_for(user):
         unmet = sum(sacco.checklist_total - sacco.checklist_met for sacco in _saccos(user))
         return [
             _item("Applications to appraise", loans.filter(status=Status.SUBMITTED).count(), _loan_list(Status.SUBMITTED)),
-            _item("Appraised loans to decide", loans.filter(status=Status.APPRAISED).count(), _loan_list(Status.APPRAISED),
-                  "Approve, or reject with a reason."),
+            _item("Appraised loans to decide",
+                  loans.filter(status=Status.APPRAISED).exclude(appraisal__appraised_by=user).count(),
+                  _loan_list(Status.APPRAISED), "Loans another official appraised: approve, or reject with a reason."),
             _item("Approved loans to pay out", loans.filter(status=Status.APPROVED).count(), _loan_list(Status.APPROVED)),
             _arrears_item(user),
             _item("Checklist requirements not met", unmet, reverse("saccos:sacco_list"), "Your SACCO needs all of them to receive funds."),
