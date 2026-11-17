@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Quarterly report {{ quarter }} · PDM Tracking System{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3 no-print">
+  <form method="get" class="d-flex gap-2 align-items-center">
+    <label class="small text-muted" for="q">Quarter</label>
+    <select class="form-select form-select-sm" id="q" name="q" onchange="this.form.submit()">
+      {% for q in quarters %}<option value="{{ q }}" {% if q.start == quarter.start %}selected{% endif %}>{{ q.label }}</option>{% endfor %}
+    </select>
+    <noscript><button class="btn btn-sm btn-outline-secondary">Show</button></noscript>
+  </form>
+  <button class="btn btn-pdm btn-sm" type="button" onclick="window.print()">Print or save as PDF</button>
+</div>
+
+<article class="report">
+  <header class="mb-4">
+    <p class="text-crimson fw-bold text-uppercase small mb-1">Parish Development Model · quarterly report</p>
+    <h1 class="h3 mb-1">{{ area_name }}</h1>
+    <p class="text-muted mb-0">{{ quarter.label }} · prepared {{ figures.as_of|date:"j M Y" }} by {{ user }} ({{ user.role }})</p>
+    <p class="small text-muted mb-0">Prototype with sample data · not an official government report</p>
+  </header>
+
+  {% with f=figures %}
+  <h2 class="h5">1. Households</h2>
+  <table class="table table-sm report-table mb-4"><tbody>
+    <tr><th>Households registered in the quarter</th><td>{{ f.households_registered }}</td></tr>
+    <tr><th>Households verified by LC I in the quarter</th><td>{{ f.households_verified }}</td></tr>
+  </tbody></table>
+
+  <h2 class="h5">2. Parish Revolving Fund loans</h2>
+  <table class="table table-sm report-table mb-4"><tbody>
+    <tr><th>Applications submitted to SACCOs</th><td>{{ f.applications_submitted }}</td></tr>
+    <tr><th>Loans approved / rejected</th><td>{{ f.loans_approved }} / {{ f.loans_rejected }}</td></tr>
+    <tr><th>Loans paid out</th><td>{{ f.payouts.n }} · UGX {{ f.payouts.total|default:0|intcomma }}</td></tr>
+    <tr><th>Repayments received</th><td>{{ f.repayments.n }} · UGX {{ f.repayments.total|default:0|intcomma }}</td></tr>
+  </tbody></table>
+
+  <h2 class="h5">3. Position on {{ f.as_of|date:"j M Y" }}</h2>
+  <table class="table table-sm report-table mb-4"><tbody>
+    <tr><th>Still owed by households</th><td>UGX {{ f.position.outstanding|intcomma }}</td></tr>
+    <tr><th>In arrears</th><td>UGX {{ f.position.arrears|intcomma }}</td></tr>
+    <tr><th>Portfolio at risk</th><td>{{ f.position.portfolio_at_risk }}%</td></tr>
+    <tr><th>Loans in default (90+ days overdue)</th><td>{{ f.defaulted_now }}</td></tr>
+  </tbody></table>
+
+  <h2 class="h5">4. Citizen voice</h2>
+  <table class="table table-sm report-table mb-4"><tbody>
+    <tr><th>Complaints received</th><td>{{ f.complaints_received }}{% if f.complaints_bribery %} (of which bribery: {{ f.complaints_bribery }}){% endif %}</td></tr>
+    <tr><th>Complaints escalated for no resolution in 7 days</th><td>{{ f.complaints_escalated }}</td></tr>
+    <tr><th>Complaints resolved</th><td>{{ f.complaints_resolved }}{% if f.days_to_resolve is not None %} · average {{ f.days_to_resolve }} days{% endif %}</td></tr>
+    <tr><th>Success stories published after PDC check</th><td>{{ f.stories_published }}</td></tr>
+  </tbody></table>
+  {% endwith %}
+
+  {% if rows %}
+  <h2 class="h5">5. By {{ rows.0.unit.get_level_display|lower }} (position today)</h2>
+  <div class="table-responsive"><table class="table table-sm mb-4">
+    <thead><tr><th>{{ rows.0.unit.get_level_display }}</th><th class="text-end">Households</th><th class="text-end">Verified</th><th class="text-end">Paid out</th><th class="text-end">Repaid</th><th class="text-end">In arrears</th><th class="text-end">At risk</th></tr></thead>
+    <tbody>{% for row in rows %}
+      <tr><td>{{ row.unit.name }}</td><td class="text-end">{{ row.households }}</td><td class="text-end">{{ row.verified }}</td><td class="text-end">{{ row.disbursed|intcomma }}</td><td class="text-end">{{ row.repaid|intcomma }}</td><td class="text-end">{{ row.arrears|intcomma }}</td><td class="text-end">{{ row.portfolio_at_risk }}%</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+  <p class="small text-muted">Flows count events dated inside the quarter. Positions are as of the day the report was prepared. Figures come from the live shared record and are limited to the preparer's area.</p>
+</article>
+{% endblock %}

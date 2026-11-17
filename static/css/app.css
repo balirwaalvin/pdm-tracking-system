@@ -28,3 +28,14 @@ body { background: var(--pdm-light); }
 .task-card.task-urgent { border-left-color: var(--pdm-gold); }
 .task-card .display-6 { color: var(--pdm-navy); }
 .navbar-pdm .nav-link.active { font-weight: 600; text-decoration: underline; text-underline-offset: 6px; }
+
+/* Quarterly report: label/value tables, and a clean printout */
+.report-table th { font-weight: 400; width: 65%; }
+.report-table td { font-weight: 600; font-variant-numeric: tabular-nums; }
+@media print {
+  .no-print, .navbar, .prototype-banner, footer, .alert { display: none !important; }
+  main.container { max-width: 100%; padding: 0; }
+  body { background: #fff; }
+  .report h2 { break-after: avoid; }
+  .report table { break-inside: avoid; }
+}
