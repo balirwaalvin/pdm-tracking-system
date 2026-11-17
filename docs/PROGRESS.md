@@ -29,10 +29,10 @@ Day 1 was Tue 17 Nov 2026; Day 10 is Thu 26 Nov 2026; the buffer runs to Mon 30 
 
 ## Day 7: USSD and SMS (Africa's Talking sandbox)
 
-- [ ] USSD callback view in `ussd` (CSRF-exempt POST with `sessionId`, `phoneNumber` and `text`) and the menu flow.
-- [ ] USSD menus: "My PDM status" and "My loan", with the household found by phone number.
-- [ ] SMS alerts on approval, disbursement and repayment. Wrap them in one service function, and log rather than crash when there are no keys.
-- [ ] Test every USSD path with the Django test client. Use the simulator when the sandbox exists.
+- [x] USSD callback view in `ussd` (CSRF-exempt POST with `sessionId`, `phoneNumber` and `text`) and the menu flow.
+- [x] USSD menus: "My PDM status" and "My loan", with the household found by phone number.
+- [x] SMS alerts on approval, disbursement and repayment. Wrap them in one service function, and log rather than crash when there are no keys.
+- [x] Test every USSD path with the Django test client. Use the simulator when the sandbox exists. (Django tests done; the Africa's Talking simulator check waits for the sandbox account.)
 
 ## Day 8: dashboards and audit
 
