@@ -176,6 +176,8 @@ class Command(BaseCommand):
                     verification_note="Known to the village; lives here.",
                 )
             Household.objects.update_or_create(nin=nin, defaults=defaults)
+        # The demo household user is Grace Nakato, head of the first household.
+        Household.objects.filter(nin="CF85001234ABCD").update(account=User.objects.get(username="household"))
         self.stdout.write(f"  {len(GROUPS)} enterprise groups and {len(HOUSEHOLDS)} households")
 
     def create_saccos(self, units):
