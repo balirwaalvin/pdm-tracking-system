@@ -190,3 +190,47 @@ class EnterpriseGroupPageTests(TestCase):
         response = self.client.get(reverse("registry:group_detail", args=[group.pk]))
         self.assertContains(response, "Grace Nakato")
         self.assertContains(response, "Members (4)")
+
+
+class HouseholdPhoneTests(TestCase):
+    """USSD and SMS find a household by phone, so numbers are normalised and unique."""
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_demo", verbosity=0, stdout=open("/dev/null", "w"))
+
+    def form(self, **overrides):
+        from .forms import HouseholdForm
+
+        data = {
+            "head_name": "Test Person", "nin": "CM99001122ZZZZ", "phone": "0772123456", "sex": "M",
+            "age_group": "adult", "household_size": 3, "wealth_rank": "poor",
+            "village": AdminUnit.objects.get(name="Kitega").pk,
+        }
+        data.update(overrides)
+        return HouseholdForm(data=data)
+
+    def test_local_format_is_stored_as_international(self):
+        form = self.form()
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["phone"], "256772123456")
+
+    def test_a_number_used_by_another_household_is_refused(self):
+        form = self.form(phone="+256 700 000001")  # Grace's number
+        self.assertFalse(form.is_valid())
+        self.assertIn("already used by Grace Nakato", form.errors["phone"][0])
+
+    def test_not_a_ugandan_mobile_number(self):
+        self.assertFalse(self.form(phone="12345").is_valid())
+
+    def test_phone_is_optional(self):
+        self.assertTrue(self.form(phone="").is_valid())
+
+    def test_database_refuses_duplicates_too(self):
+        from django.db import IntegrityError
+
+        grace = Household.objects.get(nin="CF85001234ABCD")
+        isaac = Household.objects.get(nin="CM92004567EFGH")
+        isaac.phone = grace.phone
+        with self.assertRaises(IntegrityError):
+            isaac.save()
