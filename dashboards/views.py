@@ -10,27 +10,55 @@ from django.views.generic import ListView, TemplateView
 
 from accounts import access
 from accounts.mixins import RoleRequiredMixin
-from accounts.scoping import scope_queryset
-from registry.models import AdminUnit
 
-from . import queries
+from . import queries, workspace
 
 DASHBOARD_ROLES = access.roles_for("dashboard")  # from the access policy
 
 
 class HomeView(TemplateView):
+    """A landing page when signed out; when signed in, the user's own workspace.
+
+    The workspace shows only this role's work and access: the to-do list,
+    the pages and actions the access policy allows, and what is outside the role.
+    """
+
     template_name = "dashboards/home.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        if user.is_authenticated:
-            visible = scope_queryset(AdminUnit.objects.select_related("parent"), user, "pk")
-            context["area_path"] = (
-                [user.admin_unit, *user.admin_unit.ancestors()] if user.admin_unit else []
-            )
-            context["visible_units"] = visible.order_by("level", "name")
-            context["visible_count"] = visible.count()
+        if not user.is_authenticated:
+            return context
+        pages = access.pages_for(user)
+        context.update(
+            area_path=[user.admin_unit, *user.admin_unit.ancestors()] if user.admin_unit else [],
+            role_summary=access.summary_for(user),
+            tasks=workspace.tasks_for(user),
+            pages=pages,
+            actions=access.actions_for(user),
+            denied=[feature for feature in access.PAGES if feature not in pages],
+        )
+        if access.allows(user, "my_household"):
+            context["household"] = getattr(user, "household_record", None)
+        return context
+
+
+class MyHouseholdView(RoleRequiredMixin, TemplateView):
+    """The household's own record and loans. A household user sees nothing else."""
+
+    template_name = "dashboards/my_household.html"
+    allowed_roles = access.roles_for("my_household")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        household = getattr(self.request.user, "household_record", None)
+        context["household"] = household
+        if household is not None:
+            loans = household.loans.select_related("sacco", "disbursement").prefetch_related("repayments", "sms_messages")
+            context["loans"] = [
+                {"loan": loan, "schedule": loan.schedule_with_status(), "sms": loan.sms_messages.all()} for loan in loans
+            ]
         return context
 
 
