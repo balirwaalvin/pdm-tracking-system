@@ -35,6 +35,12 @@ UNITS = {
             "Nantabulirwa": ["Nantabulirwa A", "Nantabulirwa B"],
         },
     },
+    # A second district, so national figures compare more than one. No demo users work here.
+    "Wakiso": {
+        "Nsangi": {
+            "Kyengera": ["Kyengera A", "Kitemu"],
+        },
+    },
 }
 
 # username, first name, last name, role, unit name (None = national), phone
@@ -95,6 +101,7 @@ class Command(BaseCommand):
         self.create_loans()
         self.create_complaints()
         self.create_stories()
+        self.create_second_district(units)
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
 
     def create_units(self):
@@ -445,3 +452,93 @@ class Command(BaseCommand):
                 story.check_note = "Checked against the loan file and repayments; matches."
                 story.save()
         self.stdout.write(f"  {S.objects.count()} success stories")
+
+    def create_second_district(self, units):
+        """Kyengera parish in Wakiso: an eligible SACCO, a group, four households and three loans.
+
+        Its loan records were entered from the SACCO's paper files, so no
+        appraising or deciding official is named in the system.
+        """
+        today, now = timezone.localdate(), timezone.now()
+        national, parish = User.objects.get(username="national"), units["Kyengera"]
+        sacco, _ = Sacco.objects.update_or_create(
+            parish=parish,
+            defaults={
+                "name": "Kyengera PDM SACCO",
+                "registration_number": "SAMPLE/PDM/KYEN/003",
+                "bank_name": "Sample Bank Uganda",
+                "bank_account_number": "SAMPLE-0003",
+            },
+        )
+        sacco.ensure_checklist()
+        sacco.checklist.update(met=True, checked_at=now)
+        FundRelease.objects.get_or_create(
+            sacco=sacco,
+            financial_year="2025/26",
+            defaults={
+                "amount": 80_000_000,
+                "release_date": datetime.date(2025, 9, 15),
+                "reference": "SAMPLE-REL-0002",
+                "recorded_by": national,
+                "confirmed_at": now,
+            },
+        )
+        group, _ = EnterpriseGroup.objects.update_or_create(
+            parish=parish,
+            name="Kyengera Produce Growers",
+            defaults={"enterprise": EnterpriseGroup.Enterprise.PRODUCE, "registration_number": "NSANGI/EG/001", "sacco": sacco},
+        )
+        # head, NIN, phone, sex, age, village, loan amount or None, months ago paid out, instalments repaid
+        people = [
+            ("Sarah Nalubega", "CF88007531KYEA", "256700000041", "F", "adult", "Kyengera A", 900_000, 5, 5),
+            ("Daniel Ssekandi", "CM91008642KYEB", "256700000042", "M", "youth", "Kyengera A", 600_000, 4, 4),
+            ("Rose Nakimuli", "CF79009753KYEC", "256700000043", "F", "older", "Kitemu", 500_000, 3, 1),
+            ("Joseph Kawuki", "CM85001864KYED", "256700000044", "M", "adult", "Kitemu", None, 0, 0),
+        ]
+        for head, nin, phone, sex, age, village, amount, months_ago, paid in people:
+            household, _ = Household.objects.update_or_create(
+                nin=nin,
+                defaults={
+                    "head_name": head, "phone": phone, "sex": sex, "age_group": age, "household_size": 5,
+                    "wealth_rank": "poor", "village": units[village], "enterprise_group": group,
+                    "verification": Household.Verification.VERIFIED,
+                },
+            )
+            if amount is None:
+                continue
+            paid_out = today - datetime.timedelta(days=30 * months_ago + 3)
+            loan, made = LoanApplication.objects.get_or_create(
+                household=household,
+                enterprise="Maize and beans on two acres",
+                defaults={
+                    "enterprise_group": group, "sacco": sacco, "amount": amount, "term_months": 12,
+                    "business_plan": "Seed, fertiliser and hired labour; sell at Kyengera market.",
+                    "status": LoanApplication.Status.DISBURSED, "submitted_at": now - datetime.timedelta(days=30 * months_ago + 20),
+                    "decided_at": now - datetime.timedelta(days=30 * months_ago + 10),
+                    "decision_reason": "Approved by the SACCO Board (entered from the paper file).",
+                },
+            )
+            Appraisal.objects.get_or_create(
+                application=loan,
+                defaults={"viability_score": 4, "repayment_score": 4, "group_score": 4,
+                          "recommendation": Appraisal.Recommendation.APPROVE,
+                          "reasons": "Entered from the SACCO's paper file."},
+            )
+            Disbursement.objects.get_or_create(
+                application=loan,
+                defaults={"amount": amount, "disbursed_on": paid_out, "method": Disbursement.Method.MOBILE,
+                          "reference": f"SAMPLE-KYEN-{loan.pk:04d}"},
+            )
+            loan.refresh_from_db()
+            schedule = loan.schedule()
+            for instalment in schedule[:paid]:
+                Repayment.objects.get_or_create(
+                    application=loan,
+                    reference=f"SAMPLE-KYEN-R{loan.pk:03d}-{instalment.number:02d}",
+                    defaults={"amount": instalment.amount, "paid_on": instalment.due_date - datetime.timedelta(days=2),
+                              "method": Repayment.Method.MOBILE},
+                )
+            if loan.status == LoanApplication.Status.DISBURSED and loan.repayments.exists():
+                workflow.after_repayment(loan)
+            workflow.flag_default(loan)
+        self.stdout.write("  Second district: Wakiso › Nsangi › Kyengera, with an eligible SACCO and 3 loans")
