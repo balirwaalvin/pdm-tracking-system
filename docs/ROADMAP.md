@@ -22,10 +22,10 @@ The final presentation is on **Thu 26 Nov 2026**, so the old buffer (27–30 Nov
 
 Found during development.
 
-- [ ] **Maker-checker on loans.** The official who appraised a loan cannot also approve it. Add a second SACCO demo user (the SACCO Board chair) to approve.
-- [ ] **Unique household phone numbers.** USSD and SMS find a household by phone, so a duplicate would expose another household's loan.
-- [ ] **Sign-in log for the auditor.** Record successful and failed sign-ins, with time and address, next to the audit log.
-- [ ] **Password change page** for every user, and sessions that end after 30 minutes idle.
+- [x] **Maker-checker on loans.** The official who appraised a loan cannot also approve it. Add a second SACCO demo user (the SACCO Board chair) to approve.
+- [x] **Unique household phone numbers.** USSD and SMS find a household by phone, so a duplicate would expose another household's loan.
+- [x] **Sign-in log for the auditor.** Record successful and failed sign-ins, with time and address, next to the audit log.
+- [x] **Password change page** for every user, and sessions that end after 30 minutes idle.
 
 ## Sat 21 Nov: reporting (Should)
 
