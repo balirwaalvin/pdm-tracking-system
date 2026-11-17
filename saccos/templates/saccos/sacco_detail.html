@@ -68,7 +68,7 @@
     <div class="card shadow-sm">
       <div class="card-body">
         <h2 class="h6 text-uppercase text-muted">Enterprise groups</h2>
-        <ul class="mb-0">{% for g in groups %}<li><a href="{% url 'registry:group_detail' g.pk %}">{{ g.name }}</a> · {{ g.get_enterprise_display }}</li>{% empty %}<li class="text-muted">None linked yet.</li>{% endfor %}</ul>
+        <ul class="mb-0">{% for g in groups %}<li>{% if access.groups %}<a href="{% url 'registry:group_detail' g.pk %}">{{ g.name }}</a>{% else %}{{ g.name }}{% endif %} · {{ g.get_enterprise_display }}</li>{% empty %}<li class="text-muted">None linked yet.</li>{% endfor %}</ul>
       </div>
     </div>
   </div>

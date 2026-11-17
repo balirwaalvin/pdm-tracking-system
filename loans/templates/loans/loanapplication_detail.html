@@ -5,7 +5,7 @@
 <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'loans:loan_list' %}">Loans</a></li><li class="breadcrumb-item active">Loan {{ loan.pk }}</li></ol></nav>
 <div class="d-flex justify-content-between align-items-start mb-3">
   <div>
-    <h1 class="h3 mb-1">UGX {{ loan.amount|intcomma }} for <a href="{% url 'registry:household_detail' loan.household.pk %}">{{ loan.household.head_name }}</a></h1>
+    <h1 class="h3 mb-1">UGX {{ loan.amount|intcomma }} for {% if access.households %}<a href="{% url 'registry:household_detail' loan.household.pk %}">{{ loan.household.head_name }}</a>{% else %}{{ loan.household.head_name }}{% endif %}</h1>
     <p class="text-muted mb-0">{{ loan.enterprise_group.name }} · {{ loan.sacco.name }} · {{ loan.term_months }} months</p>
   </div>
   <div>{% include "loans/_status_badge.html" %}</div>

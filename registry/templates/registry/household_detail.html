@@ -22,7 +22,7 @@
           <dt class="col-sm-5">Person with disability</dt><dd class="col-sm-7">{{ household.has_disability|yesno:"Yes,No" }}</dd>
           <dt class="col-sm-5">Household size</dt><dd class="col-sm-7">{{ household.household_size }}</dd>
           <dt class="col-sm-5">Wealth rank</dt><dd class="col-sm-7">{{ household.get_wealth_rank_display }}</dd>
-          <dt class="col-sm-5">Enterprise group</dt><dd class="col-sm-7">{% if household.enterprise_group %}<a href="{% url 'registry:group_detail' household.enterprise_group.pk %}">{{ household.enterprise_group }}</a>{% else %}-{% endif %}</dd>
+          <dt class="col-sm-5">Enterprise group</dt><dd class="col-sm-7">{% if household.enterprise_group %}{% if access.groups %}<a href="{% url 'registry:group_detail' household.enterprise_group.pk %}">{{ household.enterprise_group }}</a>{% else %}{{ household.enterprise_group }}{% endif %}{% else %}-{% endif %}</dd>
           <dt class="col-sm-5">Registered by</dt><dd class="col-sm-7">{{ household.registered_by|default:"-" }} on {{ household.created_at|date:"j M Y" }}</dd>
         </dl>
         {% if can_edit %}<a class="btn btn-outline-secondary btn-sm mt-3" href="{% url 'registry:household_edit' household.pk %}">Edit</a>{% endif %}
