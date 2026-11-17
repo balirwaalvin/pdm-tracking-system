@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}My household · PDM Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">My household</h1>
+<p class="text-muted">Your own PDM record. Only you and the officials responsible for your area can see it.</p>
+{% if not household %}
+  <div class="alert alert-warning">Your login is not linked to a household record yet. Ask your Parish Chief.</div>
+{% else %}
+<div class="card shadow-sm mb-3"><div class="card-body">
+  <dl class="row mb-0">
+    <dt class="col-sm-4">Head of household</dt><dd class="col-sm-8">{{ household.head_name }}</dd>
+    <dt class="col-sm-4">Village</dt><dd class="col-sm-8">{{ household.village.name }}</dd>
+    <dt class="col-sm-4">Verification</dt><dd class="col-sm-8">{% include "registry/_verification_badge.html" %}{% if household.verification == "rejected" and household.verification_note %} · {{ household.verification_note }}{% endif %}</dd>
+    <dt class="col-sm-4">Enterprise group</dt><dd class="col-sm-8">{{ household.enterprise_group|default:"Not yet in a group" }}</dd>
+    <dt class="col-sm-4">PDM SACCO</dt><dd class="col-sm-8">{{ household.enterprise_group.sacco|default:"-" }}</dd>
+    <dt class="col-sm-4">Phone for SMS alerts</dt><dd class="col-sm-8">{{ household.phone|default:"-" }}</dd>
+  </dl>
+</div></div>
+
+{% for item in loans %}{% with loan=item.loan %}
+<div class="card shadow-sm mb-3"><div class="card-body">
+  <div class="d-flex justify-content-between align-items-start">
+    <h2 class="h5 mb-1">Loan of UGX {{ loan.amount|intcomma }}</h2>
+    {% include "loans/_status_badge.html" %}
+  </div>
+  <p class="text-muted small">{{ loan.enterprise }} · {{ loan.sacco.name }} · {{ loan.term_months }} months</p>
+  {% if loan.status == "rejected" and loan.decision_reason %}<p><strong>Reason:</strong> {{ loan.decision_reason }}</p>{% endif %}
+  {% if item.schedule %}
+    <p class="mb-2">Total due UGX <strong>{{ loan.total_due|intcomma }}</strong> · repaid UGX <strong>{{ loan.total_repaid|intcomma }}</strong> · balance UGX <strong>{{ loan.balance|intcomma }}</strong>
+      {% with a=loan.arrears %}{% if a %}<br><span class="text-danger">Overdue: UGX {{ a|intcomma }}. Please visit your SACCO.</span>{% endif %}{% endwith %}</p>
+    <div class="table-responsive"><table class="table table-sm small mb-0">
+      <thead><tr><th>#</th><th>Due</th><th class="text-end">Instalment (UGX)</th><th class="text-end">Paid</th><th></th></tr></thead>
+      <tbody>{% for row in item.schedule %}
+        <tr><td>{{ row.instalment.number }}</td><td>{{ row.instalment.due_date|date:"j M Y" }}</td><td class="text-end">{{ row.instalment.amount|intcomma }}</td><td class="text-end">{{ row.paid|intcomma }}</td>
+          <td>{% if row.state == "paid" %}<span class="badge text-bg-success">Paid</span>{% elif row.state == "overdue" %}<span class="badge text-bg-danger">Overdue</span>{% else %}<span class="badge text-bg-light">Due</span>{% endif %}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+  {% endif %}
+  {% if item.sms %}
+    <h3 class="h6 mt-3">SMS alerts sent to you</h3>
+    <ul class="small mb-0">{% for sms in item.sms %}<li>{{ sms.created_at|date:"j M Y" }}: {{ sms.message }}</li>{% endfor %}</ul>
+  {% endif %}
+</div></div>
+{% endwith %}{% empty %}
+<div class="card shadow-sm"><div class="card-body text-muted">No loan application yet. Ask your enterprise group executive.</div></div>
+{% endfor %}
+<p class="small text-muted mt-3">You can also dial the PDM USSD code from this phone to check your status.</p>
+{% endif %}
+{% endblock %}
