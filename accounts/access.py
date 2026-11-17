@@ -109,3 +109,24 @@ def actions_for(user):
 def access_flags(user):
     """{feature key: True/False} for templates, e.g. {% if access.households %}."""
     return {key: allows(user, key) for key in _ALL}
+
+
+# One line per role, shown on the user's home page under "Your access".
+ROLE_SUMMARIES = {
+    r.HOUSEHOLD: "You can see your own household's PDM record and loan. No one else's.",
+    r.GROUP_EXECUTIVE: "You apply for loans on behalf of verified members of your enterprise group.",
+    r.LC1_CHAIRPERSON: "You confirm whether households really live in your village.",
+    r.PARISH_CHIEF: "You profile households in your parish and follow up their progress.",
+    r.PDC: "You oversee PDM in your parish: verification, loans and repayment.",
+    r.SACCO_OFFICIAL: "You run the PDM SACCO: eligibility, appraisal, decisions, payouts and repayments.",
+    r.SUBCOUNTY_OFFICIAL: "You register enterprise groups and supervise the parishes in your sub-county.",
+    r.DISTRICT_OFFICIAL: "You confirm fund releases and supervise PDM across your district.",
+    r.NATIONAL_OFFICIAL: "You release the Parish Revolving Fund and follow PDM nationally.",
+    r.AUDITOR: "You can read every record and the full audit trail. You cannot change anything.",
+}
+
+
+def summary_for(user):
+    if user.is_superuser:
+        return "System administrator: full access."
+    return ROLE_SUMMARIES.get(user.role, "No role assigned yet. Ask the system administrator.")
