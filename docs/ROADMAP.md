@@ -14,9 +14,9 @@ The final presentation is on **Thu 26 Nov 2026**, so the old buffer (27–30 Nov
 
 ## Thu 19 Nov: citizen voice, part 2 (Must)
 
-- [ ] Success stories: the Parish Chief or CDO drafts one, the household's consent is recorded, and the PDC checks it against the household's records and approves or rejects it. Only approved stories are shown.
-- [ ] Public parish page with no login: anonymised totals (households, loans paid out, repayment rate) and approved stories, with no names or NINs unless consent covers them.
-- [ ] Open data download: a CSV of anonymised parish totals for the public page. *(Should)*
+- [x] Success stories: the Parish Chief or CDO drafts one, the household's consent is recorded, and the PDC checks it against the household's records and approves or rejects it. Only approved stories are shown.
+- [x] Public parish page with no login: anonymised totals (households, loans paid out, repayment rate) and approved stories, with no names or NINs unless consent covers them.
+- [x] Open data download: a CSV of anonymised parish totals for the public page. *(Should)*
 
 ## Fri 20 Nov: governance and IAM hardening (Should, new)
 
