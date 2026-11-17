@@ -36,9 +36,9 @@ Day 1 was Tue 17 Nov 2026; Day 10 is Thu 26 Nov 2026; the buffer runs to Mon 30 
 
 ## Day 8: dashboards and audit
 
-- [ ] Dashboard queries for each level, from parish to national, scoped by `scope_unit_ids()`.
-- [ ] Dashboard page with totals and Chart.js charts from a CDN.
-- [ ] Audit log page for the auditor role (read-only).
+- [x] Dashboard queries for each level, from parish to national, scoped by `scope_unit_ids()`.
+- [x] Dashboard page with totals and Chart.js charts from a CDN.
+- [x] Audit log page for the auditor role (read-only).
 
 ## Day 9: citizen voice (Should)
 
