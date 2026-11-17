@@ -63,6 +63,25 @@ The seed also adds 14 sample households, 3 enterprise groups, 2 SACCOs (Seeta is
 
 These are sample people and places for demonstration only.
 
+## Access by role
+
+Access follows least privilege. One policy table, `accounts/access.py`, decides which role may open each page and take each action. The menu, each user's home page and every view read from it, and a test checks the whole matrix (every allowed page opens, every other page is refused). On top of this, everyone sees only records in their own area.
+
+| Role | My household | Dashboard | Households | Groups | SACCOs | Loans | Arrears | USSD | Audit log | Can do |
+| --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | --- |
+| Household | ✓ |  |  |  |  |  |  |  |  | read only |
+| Enterprise group executive |  |  | ✓ | ✓ |  | ✓ |  |  |  | start a loan application |
+| LC I Chairperson |  |  | ✓ |  |  |  |  | ✓ |  | verify households |
+| Parish Chief |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  | register a household |
+| Parish Development Committee |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  | read only |
+| PDM SACCO official |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  | update the sacco checklist, appraise, decide and pay out loans |
+| Sub-county Chief and CDO |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  | register an enterprise group |
+| District official |  | ✓ |  |  | ✓ | ✓ | ✓ |  |  | confirm fund releases |
+| PDM Secretariat and MoFPED |  | ✓ |  |  | ✓ | ✓ | ✓ |  |  | record fund releases |
+| Auditor |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ | read only |
+
+After signing in, each user lands on their own workspace: the work waiting for their role (for example, loans to appraise for the SACCO, or households to verify for the LC I chairperson), the pages and actions they may use, and what is outside their role. A household user sees only their own household, loan and SMS alerts.
+
 ## Africa's Talking (USSD and SMS)
 
 The USSD callback is `POST /ussd/callback/` (no login; Africa's Talking sends `sessionId`, `serviceCode`, `phoneNumber` and `text`). In the Africa's Talking sandbox, create a USSD channel and set its callback URL to `https://pdm.treez.tech/ussd/callback/`.
