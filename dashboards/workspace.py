@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from accounts import roles as r
 from accounts.scoping import scope_queryset
-from feedback.models import Complaint
+from feedback.models import Complaint, SuccessStory
 from loans.models import LoanApplication
 from loans.workflow import ACTIVE_STATUSES
 from registry.models import EnterpriseGroup, Household
@@ -61,6 +61,14 @@ def _complaints_item(user, level):
     return _item("Complaints for your office", waiting.count(), url, "Resolve within 7 days or they move up a level.")
 
 
+def _stories(user, status):
+    return scope_queryset(SuccessStory.objects.filter(status=status), user, "household__village").count()
+
+
+def _story_list(status):
+    return f"{reverse('feedback:story_list')}?status={status}"
+
+
 def tasks_for(user):
     """Work waiting for this user, by role."""
     role = user.role
@@ -82,6 +90,8 @@ def tasks_for(user):
                   _household_list(Verification.VERIFIED), "They need a group before they can borrow."),
             _arrears_item(user),
             _complaints_item(user, Complaint.Level.PARISH),
+            _item("Stories sent back by the PDC", _stories(user, SuccessStory.Status.REJECTED),
+                  _story_list(SuccessStory.Status.REJECTED), "Correct them and submit again."),
         ]
     if role == r.GROUP_EXECUTIVE:
         loans = _loans(user)
@@ -102,6 +112,8 @@ def tasks_for(user):
         ]
     if role == r.PDC:
         return [
+            _item("Success stories to check", _stories(user, SuccessStory.Status.SUBMITTED),
+                  _story_list(SuccessStory.Status.SUBMITTED), "Check each against the household's records."),
             _item("Loans waiting for the SACCO's decision", _loans(user).filter(status=Status.APPRAISED).count(),
                   _loan_list(Status.APPRAISED)),
             _item("Households waiting for LC I", _households(user).filter(verification=Verification.PENDING).count(),
