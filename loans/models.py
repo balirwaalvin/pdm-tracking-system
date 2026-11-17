@@ -198,6 +198,10 @@ class Repayment(models.Model):
     def __str__(self):
         return f"UGX {self.amount:,} repaid on loan {self.application_id} on {self.paid_on}"
 
+    @property
+    def receipt_number(self):
+        return f"RCPT-{self.pk:06d}"
+
 
 from auditlog.registry import auditlog  # noqa: E402
 
