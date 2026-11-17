@@ -78,7 +78,9 @@ class ComplaintCreateView(RoleRequiredMixin, CreateView):
     template_name = "feedback/complaint_form.html"
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated and getattr(request.user, "household_record", None) is None:
+        user = request.user
+        # The role check comes first, so officials get "forbidden", not a redirect.
+        if access.allows(user, "raise_complaint") and getattr(user, "household_record", None) is None:
             messages.error(request, "Your login is not linked to a household record yet. Ask your Parish Chief.")
             return redirect("home")
         return super().dispatch(request, *args, **kwargs)
