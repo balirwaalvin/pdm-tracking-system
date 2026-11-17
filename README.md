@@ -23,6 +23,7 @@ Under active development: a functional prototype within 10 days. See [docs/PROGR
 - **Public parish pages** (`/parishes/`, no sign-in): anonymised totals (households, loans paid out, on-time repayment rate, complaints resolved), approved stories, and the same figures as an open data CSV.
 - **Dashboards:** totals and Chart.js charts for the user's own area, split one level down (national by district, district by sub-county, sub-county by parish, parish by village): households and verification, inclusion, money paid out, repaid and in arrears, and portfolio at risk.
 - **Governance and sign-in security:** maker-checker on loans (the official who appraised a loan cannot approve or reject it; `saccochair` decides what `sacco` appraised), one phone number per household, a sign-in log for the auditor, lockout after 5 failed sign-ins in 15 minutes, password change for every user, each user's previous sign-in shown on their workspace, and sessions that end after 30 idle minutes.
+- **Reports and exports:** a quarterly report for sub-county, district and national officials (`/reports/quarterly/`, printable to PDF from the browser), and CSV downloads of households, loans, arrears and complaints that keep the page's filters and area.
 - **Audit trail:** every change is logged with who made it and when. The auditor has a read-only audit log page (`/audit/`) with filters and a CSV download.
 
 Every page checks the user's role and shows only records in the user's own area.
@@ -64,7 +65,7 @@ Open http://127.0.0.1:8000.
 | `auditor` | Auditor | Whole country |
 | `admin` | Administrator (Django admin) | Whole country |
 
-The seed also adds 14 sample households, 3 enterprise groups, 2 SACCOs (Seeta is eligible; Nantabulirwa still lacks its Supervisory Board) and a loan at each stage: submitted, appraised, approved, rejected, disbursed, repaying with arrears, and defaulted.
+The seed also adds a second district (Wakiso › Nsangi › Kyengera, with no demo users) so national figures compare two districts, and 14 sample households, 3 enterprise groups, 2 SACCOs (Seeta is eligible; Nantabulirwa still lacks its Supervisory Board) and a loan at each stage: submitted, appraised, approved, rejected, disbursed, repaying with arrears, and defaulted.
 
 These are sample people and places for demonstration only.
 
