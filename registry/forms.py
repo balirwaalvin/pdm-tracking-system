@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from accounts.scoping import scope_queryset
+from ussd.sms import normalise_phone
 
 from .models import AdminUnit, EnterpriseGroup, Household
 
@@ -50,6 +51,22 @@ class HouseholdForm(forms.ModelForm):
                 )
             )
         return nin
+
+    def clean_phone(self):
+        """Store numbers as 2567XXXXXXXX, and allow each number for one household only."""
+        raw = self.cleaned_data["phone"].strip()
+        if not raw:
+            return ""
+        phone = normalise_phone(raw)
+        if not (len(phone) == 12 and phone.startswith("2567")):
+            raise forms.ValidationError("Enter a Ugandan mobile number, such as 0772 123456 or 256772123456.")
+        existing = Household.objects.filter(phone=phone).exclude(pk=self.instance.pk).first()
+        if existing:
+            raise forms.ValidationError(
+                f"This number is already used by {existing.head_name} in {existing.village.name}. "
+                "USSD and SMS find a household by its number, so each household needs its own."
+            )
+        return phone
 
     def clean(self):
         cleaned = super().clean()
