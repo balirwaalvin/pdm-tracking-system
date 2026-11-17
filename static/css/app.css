@@ -39,3 +39,5 @@ body { background: var(--pdm-light); }
   .report h2 { break-after: avoid; }
   .report table { break-inside: avoid; }
 }
+.receipt { max-width: 640px; }
+@media print { .receipt { box-shadow: none !important; border: 1px solid #999; } }

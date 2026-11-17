@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ repayment.receipt_number }} · PDM Tracking System{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-end mb-3 no-print">
+  <button class="btn btn-pdm btn-sm" type="button" onclick="window.print()">Print or save as PDF</button>
+</div>
+<article class="receipt card shadow-sm mx-auto"><div class="card-body p-4">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+      <p class="text-crimson fw-bold text-uppercase small mb-1">Parish Revolving Fund · repayment receipt</p>
+      <h1 class="h4 mb-0">{{ loan.sacco.name }}</h1>
+    </div>
+    <div class="text-end"><div class="h5 mb-0 font-monospace">{{ repayment.receipt_number }}</div><div class="small text-muted">{{ repayment.paid_on|date:"j F Y" }}</div></div>
+  </div>
+  <table class="table table-sm report-table mb-3"><tbody>
+    <tr><th>Received from</th><td>{{ loan.household.head_name }}, {{ loan.household.village.name }} village</td></tr>
+    <tr><th>Amount</th><td>UGX {{ repayment.amount|intcomma }}</td></tr>
+    <tr><th>Paid by</th><td>{{ repayment.get_method_display }} · ref. {{ repayment.reference }}</td></tr>
+    <tr><th>For loan</th><td>Loan {{ loan.pk }} of UGX {{ loan.amount|intcomma }} ({{ loan.enterprise }})</td></tr>
+    <tr><th>Repaid so far</th><td>UGX {{ loan.total_repaid|intcomma }} of {{ loan.total_due|intcomma }}</td></tr>
+    <tr><th>Balance after all payments to date</th><td>UGX {{ loan.balance|intcomma }}</td></tr>
+    <tr><th>Recorded by</th><td>{{ repayment.recorded_by|default:"-" }} on {{ repayment.recorded_at|date:"j M Y, H:i" }}</td></tr>
+  </tbody></table>
+  <p class="small text-muted mb-0">PDM services are free: no one may charge you to receive or repay a loan. Keep this receipt. Prototype with sample data · not an official receipt.</p>
+</div></article>
+{% endblock %}
