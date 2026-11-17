@@ -11,3 +11,6 @@ python manage.py seed_demo
 
 # Flag loans with an instalment 90 or more days overdue as defaulted.
 python manage.py flag_defaults
+
+# Move unresolved complaints up a level after 7 days.
+python manage.py escalate_complaints
