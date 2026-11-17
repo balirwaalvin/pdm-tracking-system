@@ -106,3 +106,65 @@ from auditlog.registry import auditlog  # noqa: E402
 
 auditlog.register(Complaint)
 auditlog.register(ComplaintResponse)
+
+
+class SuccessStory(models.Model):
+    """A household's PDM success story, verified before anyone outside sees it.
+
+    The Parish Chief or CDO drafts it and records the household's consent.
+    The PDC checks it against the household's records and approves or
+    rejects it. Only approved stories appear on the public parish page, and
+    the household's full name only if they agreed to it.
+    """
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SUBMITTED = "submitted", "Waiting for the PDC"
+        APPROVED = "approved", "Approved and public"
+        REJECTED = "rejected", "Sent back by the PDC"
+
+    class ConsentMethod(models.TextChoices):
+        SIGNED = "signed", "Signed consent form"
+        THUMBPRINT = "thumbprint", "Thumbprint on consent form"
+        VERBAL = "verbal", "Spoken consent, witnessed by the LC I"
+
+    household = models.ForeignKey("registry.Household", on_delete=models.PROTECT, related_name="stories")
+    title = models.CharField(max_length=120)
+    story = models.TextField(help_text="What the household did with PDM support, in their own words where possible.")
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT)
+
+    consent_given = models.BooleanField("The household agrees to this story being published", default=False)
+    consent_method = models.CharField(max_length=12, choices=ConsentMethod.choices, blank=True)
+    show_name = models.BooleanField(
+        "The household agrees to be named", default=False,
+        help_text="If not ticked, the public page shows only the first name and village.",
+    )
+    consent_recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    consent_recorded_at = models.DateTimeField(null=True, blank=True)
+
+    drafted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(default=timezone.now)
+    checked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    checked_at = models.DateTimeField(null=True, blank=True)
+    check_note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = "success stories"
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def public_name(self):
+        """Full name only with consent; otherwise first name and village."""
+        if self.show_name:
+            return self.household.head_name
+        return f"{self.household.head_name.split()[0]} of {self.household.village.name}"
+
+
+auditlog.register(SuccessStory)
