@@ -1,8 +1,10 @@
 from auditlog.models import LogEntry
 from django.contrib import messages
+from django.contrib.auth.views import redirect_to_login
 from django.db import transaction
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView
@@ -14,7 +16,7 @@ from accounts.scoping import check_unit_in_scope
 
 from . import notifications, workflow
 from .forms import AppraisalForm, DecisionForm, DisbursementForm, LoanApplicationForm, RepaymentForm
-from .models import LoanApplication
+from .models import LoanApplication, Repayment
 
 Status = LoanApplication.Status
 
@@ -330,3 +332,19 @@ class ArrearsListView(RoleRequiredMixin, ScopedQuerysetMixin, CsvExportMixin, Li
         context["total_arrears"] = sum(row["arrears"] for row in context["rows"])
         context["default_after_days"] = workflow.DEFAULT_AFTER_DAYS
         return context
+
+
+def repayment_receipt(request, pk):
+    """A numbered receipt for one repayment, for the loan's officials or the household itself."""
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+    repayment = get_object_or_404(
+        Repayment.objects.select_related("application__household__village", "application__sacco", "recorded_by"), pk=pk
+    )
+    loan = repayment.application
+    own_household = getattr(request.user, "household_record", None) == loan.household
+    if not own_household:
+        if not access.allows(request.user, "loans"):
+            raise PermissionDenied("Your role cannot open this receipt.")
+        check_unit_in_scope(request.user, loan.household.village)
+    return render(request, "loans/repayment_receipt.html", {"repayment": repayment, "loan": loan})
