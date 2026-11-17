@@ -105,6 +105,9 @@
       <p>{{ role_summary }}</p>
       {% if access.my_household %}<p class="small text-muted">You see only your own household. Your Parish Chief, LC I chairperson and SACCO can see it too, for their work.</p>{% else %}
       <p class="small text-muted">You see only records in {% if area_path %}{{ area_path.0.name }}{% if area_path.0.level != "village" %} and the areas inside it{% endif %}{% else %}the whole country{% endif %}. Every change you make is recorded in the audit trail with your name.</p>{% endif %}
+      <p class="small mb-0">{% if previous_sign_in %}Your previous sign-in: {{ previous_sign_in.created_at|date:"j M Y, H:i" }}{% if previous_sign_in.ip_address %} from {{ previous_sign_in.ip_address }}{% endif %}.{% else %}This is your first recorded sign-in.{% endif %}
+        {% if failed_since %}<span class="text-danger">{{ failed_since }} failed attempt{{ failed_since|pluralize }} before this sign-in.</span>{% endif %}
+        Not you? <a href="{% url 'password_change' %}">Change your password</a>.</p>
       {% if denied %}
       <h3 class="h6 mt-3">Not part of your role</h3>
       <ul class="small text-muted mb-0">{% for page in denied %}<li>{{ page.label }}</li>{% endfor %}</ul>

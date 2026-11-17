@@ -4,6 +4,8 @@ Each role gets only the items that are its job. Counts use the same area
 scoping as every other page, and each item links to the page that does it.
 """
 
+import datetime
+
 from django.db.models import Q
 from django.urls import reverse
 
@@ -167,7 +169,12 @@ def tasks_for(user):
         from auditlog.models import LogEntry
         from django.utils import timezone
 
+        from accounts.models import SignInEvent
+
+        failed = SignInEvent.objects.filter(succeeded=False, created_at__gte=timezone.now() - datetime.timedelta(days=1))
         return [
+            _item("Failed sign-ins in the last 24 hours", failed.count(), f"{reverse('sign_in_log')}?result=failed",
+                  "Look for repeated attempts on one account."),
             _item("Changes recorded today", LogEntry.objects.filter(timestamp__date=timezone.localdate()).count(),
                   f"{reverse('audit_log')}?from={timezone.localdate().isoformat()}"),
             _item("Rejected loan applications", _loans(user).filter(status=Status.REJECTED).count(), _loan_list(Status.REJECTED),

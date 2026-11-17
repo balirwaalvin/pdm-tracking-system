@@ -43,6 +43,13 @@ class HomeView(TemplateView):
             # "My household" is a household's own page, not something officials lack.
             denied=[f for f in access.PAGES if f not in pages and f.key != "my_household"],
         )
+        # The sign-in before this one, and failed attempts since, so users can spot misuse.
+        successes = list(user.sign_ins.filter(succeeded=True).order_by("-created_at")[:2])
+        if successes:
+            context["previous_sign_in"] = successes[1] if len(successes) > 1 else None
+            context["failed_since"] = user.sign_ins.filter(
+                succeeded=False, created_at__gt=successes[-1].created_at
+            ).count()
         if access.allows(user, "my_household"):
             context["household"] = getattr(user, "household_record", None)
         return context
