@@ -1,58 +1,115 @@
 {% extends "base.html" %}
-{% block title %}Home · PDM Tracking System{% endblock %}
+{% load humanize %}
+{% block title %}{% if user.is_authenticated %}My workspace{% else %}Home{% endif %} · PDM Tracking System{% endblock %}
 {% block content %}
+{% if not user.is_authenticated %}
 <div class="row align-items-center py-4">
   <div class="col-lg-7">
     <p class="text-crimson fw-bold text-uppercase small mb-2">Parish Development Model</p>
     <h1 class="display-6 fw-bold">One shared record for every PDM stakeholder</h1>
     <p class="lead text-muted">Follow households, enterprise groups, SACCOs, Parish Revolving Fund loans and reports from the village to the ministry.</p>
-    {% if user.is_authenticated %}
-      <div class="card shadow-sm mt-3">
-        <div class="card-body">
-          <p class="mb-1"><strong>{{ user }}</strong> · {{ user.role|default:"No role yet" }}</p>
-          <p class="text-muted mb-0">
-            Your area:
-            {% if area_path %}
-              {% for unit in area_path reversed %}{{ unit.name }}{% if not forloop.last %} › {% endif %}{% endfor %}
-            {% else %}
-              Whole country
-            {% endif %}
-          </p>
-          {% if user.role and user.role != "Household" and user.role != "LC I Chairperson" %}<a class="btn btn-pdm btn-sm mt-3" href="{% url 'dashboard' %}">Open the dashboard</a>{% endif %}
-        </div>
-      </div>
-    {% else %}
-      <a class="btn btn-pdm btn-lg" href="{% url 'login' %}">Sign in</a>
-    {% endif %}
+    <a class="btn btn-pdm btn-lg" href="{% url 'login' %}">Sign in</a>
   </div>
   <div class="col-lg-5 mt-4 mt-lg-0">
-    {% if user.is_authenticated %}
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h2 class="h6 text-uppercase text-muted">Units you can see ({{ visible_count }})</h2>
-        <ul class="list-unstyled mb-0">
-          {% for unit in visible_units %}
-            <li><span class="badge text-bg-light border">{{ unit.get_level_display }}</span> {{ unit.name }}</li>
-          {% empty %}
-            <li class="text-muted">No units assigned yet.</li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-    {% else %}
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h2 class="h6 text-uppercase text-muted">What the system tracks</h2>
-        <ul class="mb-0">
-          <li>Household profiles and verification</li>
-          <li>Enterprise groups and PDM SACCOs</li>
-          <li>Loans from application to repayment</li>
-          <li>Reports for parish, sub-county, district and national levels</li>
-          <li>Complaints and success stories from citizens</li>
-        </ul>
-      </div>
-    </div>
-    {% endif %}
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">What the system tracks</h2>
+      <ul class="mb-0">
+        <li>Household profiles and verification</li>
+        <li>Enterprise groups and PDM SACCOs</li>
+        <li>Loans from application to repayment</li>
+        <li>Reports for parish, sub-county, district and national levels</li>
+        <li>Complaints and success stories from citizens</li>
+      </ul>
+    </div></div>
   </div>
 </div>
+{% else %}
+
+<div class="workspace-header d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+  <div>
+    <p class="text-crimson fw-bold text-uppercase small mb-1">{{ user.role|default:"Administrator" }}</p>
+    <h1 class="h3 mb-1">Welcome, {{ user.first_name|default:user.username }}</h1>
+    <p class="text-muted mb-0">
+      Area: {% if area_path %}{% for unit in area_path reversed %}{{ unit.name }}{% if not forloop.last %} › {% endif %}{% endfor %}{% else %}Whole country{% endif %}
+    </p>
+  </div>
+  {% if access.dashboard %}<a class="btn btn-pdm" href="{% url 'dashboard' %}">Open the area dashboard</a>{% endif %}
+</div>
+
+{% if access.my_household %}
+  {# Households: their own record, nothing else #}
+  {% if household %}
+  <div class="row g-3 mb-4">
+    <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Your household</h2>
+      <p class="h5 mb-1">{{ household.head_name }}</p>
+      <p class="mb-2 text-muted">{{ household.village.name }} village</p>
+      {% include "registry/_verification_badge.html" %}
+    </div></div></div>
+    <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Your loan</h2>
+      {% with loan=household.loans.first %}
+        {% if loan %}
+          <p class="h5 mb-1">UGX {{ loan.amount|intcomma }}</p>
+          <p class="mb-2">{% include "loans/_status_badge.html" %}</p>
+          {% if loan.balance %}<p class="mb-0 small">Balance UGX {{ loan.balance|intcomma }}{% with a=loan.arrears %}{% if a %} · <span class="text-danger">overdue UGX {{ a|intcomma }}</span>{% endif %}{% endwith %}</p>{% endif %}
+        {% else %}<p class="text-muted mb-0">No loan application yet. Ask your enterprise group executive.</p>{% endif %}
+      {% endwith %}
+    </div></div></div>
+  </div>
+  <a class="btn btn-pdm mb-4" href="{% url 'my_household' %}">See my full record</a>
+  {% else %}
+  <div class="alert alert-warning">Your login is not linked to a household record yet. Ask your Parish Chief.</div>
+  {% endif %}
+{% endif %}
+
+{% if tasks %}
+<h2 class="h5 mb-3">Waiting for you</h2>
+<div class="row g-3 mb-4">
+  {% for task in tasks %}
+  <div class="col-sm-6 col-lg-3">
+    <a class="card shadow-sm h-100 task-card text-decoration-none {% if task.urgent %}task-urgent{% endif %}" href="{{ task.url }}">
+      <div class="card-body">
+        <div class="display-6 fw-bold mb-1">{{ task.count }}</div>
+        <div class="fw-semibold text-body">{{ task.label }}</div>
+        {% if task.hint %}<div class="small text-muted mt-1">{{ task.hint }}</div>{% endif %}
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">What you can open</h2>
+      <div class="list-group list-group-flush">
+        {% for page in pages %}
+          <a class="list-group-item list-group-item-action px-0" href="{% url page.url_name %}"><strong>{{ page.label }}</strong><br><span class="small text-muted">{{ page.description }}</span></a>
+        {% endfor %}
+      </div>
+      {% if actions %}
+      <h2 class="h6 text-uppercase text-muted mt-4">What you can do</h2>
+      <ul class="list-unstyled mb-0">
+        {% for action in actions %}
+          <li class="mb-2">{% if action.url_name %}<a href="{% url action.url_name %}">{{ action.label }}</a>{% else %}<strong>{{ action.label }}</strong>{% endif %}<br><span class="small text-muted">{{ action.description }}</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Your access</h2>
+      <p>{{ role_summary }}</p>
+      <p class="small text-muted">You see only records in {% if area_path %}{{ area_path.0.name }}{% if area_path.0.level != "village" %} and the areas inside it{% endif %}{% else %}the whole country{% endif %}. Every change you make is recorded in the audit trail with your name.</p>
+      {% if denied %}
+      <h3 class="h6 mt-3">Not part of your role</h3>
+      <ul class="small text-muted mb-0">{% for page in denied %}<li>{{ page.label }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div></div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
