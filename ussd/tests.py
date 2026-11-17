@@ -212,3 +212,45 @@ class LoanAlertTests(TestCase):
         self.test_payout_and_repayment_send_texts()
         for text in self.texts():
             self.assertLessEqual(len(text), 160, text)
+
+
+class SimulatorTests(TestCase):
+    """Officials can try the USSD menu in the browser, only as households in their area."""
+
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.client.defaults["HTTP_HOST"] = "localhost"
+
+    def login(self, username):
+        self.client.force_login(User.objects.get(username=username))
+
+    def test_dial_and_choose_my_loan(self):
+        self.login("parishchief")
+        response = self.client.post(reverse("ussd:simulator"), {"phone": "256700000023", "action": "dial"})
+        self.assertContains(response, "1. My PDM status")
+        response = self.client.post(
+            reverse("ussd:simulator"), {"phone": "256700000023", "session_text": "", "answer": "2", "action": "send"}
+        )
+        self.assertContains(response, "Overdue UGX")
+        self.assertContains(response, "Session ended")
+
+    def test_households_outside_the_area_cannot_be_dialled(self):
+        self.login("lc1")  # Seeta Central village only
+        response = self.client.get(reverse("ussd:simulator"))
+        self.assertContains(response, "Grace Nakato")
+        self.assertNotContains(response, "Henry Mubiru")  # Bajjo village
+        response = self.client.post(reverse("ussd:simulator"), {"phone": "256700000023", "action": "dial"})
+        self.assertContains(response, "Choose a household in your area")
+        self.assertNotContains(response, "Overdue")
+
+    def test_household_role_cannot_open_the_simulator(self):
+        self.login("household")
+        self.assertEqual(self.client.get(reverse("ussd:simulator")).status_code, 403)
+
+    def test_logged_out_users_are_sent_to_login(self):
+        response = self.client.get(reverse("ussd:simulator"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/", response.url)
