@@ -29,9 +29,9 @@ Found during development.
 
 ## Sat 21 Nov: reporting (Should)
 
-- [ ] CSV exports, scoped to the user's area: households, loans, arrears and complaints.
-- [ ] Quarterly report page for district and national officials (figures for the quarter, printable to PDF from the browser). This replaces "quarterly report export as PDF and CSV".
-- [ ] Second sample district in the seed, so the national dashboard compares more than one district.
+- [x] CSV exports, scoped to the user's area: households, loans, arrears and complaints.
+- [x] Quarterly report page for district and national officials (figures for the quarter, printable to PDF from the browser). This replaces "quarterly report export as PDF and CSV".
+- [x] Second sample district in the seed, so the national dashboard compares more than one district.
 
 ## Sun 22 Nov: slack day (Could)
 

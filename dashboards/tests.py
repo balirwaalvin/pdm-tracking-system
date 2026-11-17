@@ -27,7 +27,7 @@ class DashboardQueryTests(TestCase):
     def test_national_sees_every_household_and_districts(self):
         summary = queries.summary(self.user("national"))
         self.assertEqual(summary["households"]["total"], Household.objects.count())
-        self.assertEqual([row["unit"].name for row in queries.breakdown(self.user("national"))], ["Mukono"])
+        self.assertEqual([row["unit"].name for row in queries.breakdown(self.user("national"))], ["Mukono", "Wakiso"])
 
     def test_each_level_breaks_down_one_level_down(self):
         self.assertEqual([r["unit"].name for r in queries.breakdown(self.user("district"))], ["Goma"])
@@ -116,7 +116,8 @@ class AuditLogTests(TestCase):
         self.login("auditor")
         response = self.client.get(reverse("audit_log"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Grace Nakato")
+        self.assertTrue(response.context["entries"])
+        self.assertContains(self.client.get(reverse("audit_log"), {"q": "Grace"}), "Grace Nakato")
 
     def test_other_roles_cannot_open_the_log(self):
         for username in ("national", "district", "sacco", "parishchief", "household"):
@@ -152,3 +153,82 @@ class AuditLogTests(TestCase):
         lines = response.content.decode().splitlines()
         self.assertEqual(lines[0], "When,Who,Action,Record type,Record,Changes")
         self.assertTrue(all("Grace" in line for line in lines[1:]))
+
+
+class QuarterlyReportTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.client.defaults["HTTP_HOST"] = "localhost"
+
+    def test_quarter_bounds(self):
+        from .reports import Quarter
+
+        q = Quarter(2026, 4)
+        self.assertEqual((q.start.isoformat(), q.end.isoformat()), ("2026-10-01", "2026-12-31"))
+        self.assertEqual(str(q.previous()), "2026-Q3")
+        self.assertEqual(str(Quarter(2026, 1).previous()), "2025-Q4")
+        self.assertEqual(Quarter.parse("2026-q2").start.isoformat(), "2026-04-01")
+        self.assertIsNone(Quarter.parse("rubbish"))
+
+    def test_report_counts_this_quarters_events(self):
+        from .reports import current_quarter, quarterly_figures
+
+        figures = quarterly_figures(User.objects.get(username="national"), current_quarter())
+        self.assertGreaterEqual(figures["complaints_received"], 1)
+        self.assertGreaterEqual(figures["complaints_bribery"], 1)
+        self.assertGreater(figures["position"]["outstanding"], 0)
+
+    def test_report_is_scoped_to_the_area(self):
+        from .reports import current_quarter, quarterly_figures
+
+        district = quarterly_figures(User.objects.get(username="district"), current_quarter())
+        national = quarterly_figures(User.objects.get(username="national"), current_quarter())
+        self.assertLess(district["position"]["disbursed"], national["position"]["disbursed"])  # Wakiso excluded
+
+    def test_page_opens_for_reporting_roles_only(self):
+        for username, expected in (("district", 200), ("national", 200), ("auditor", 200), ("subcounty", 200),
+                                   ("parishchief", 403), ("sacco", 403), ("household", 403)):
+            self.client.force_login(User.objects.get(username=username))
+            self.assertEqual(self.client.get(reverse("quarterly_report")).status_code, expected, username)
+
+    def test_choosing_a_quarter(self):
+        self.client.force_login(User.objects.get(username="national"))
+        response = self.client.get(reverse("quarterly_report"), {"q": "2025-Q3"})
+        self.assertContains(response, "Quarter 3, 2025")
+
+
+class CsvExportTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.client.defaults["HTTP_HOST"] = "localhost"
+
+    def csv(self, username, url_name, **params):
+        self.client.force_login(User.objects.get(username=username))
+        response = self.client.get(reverse(url_name), {"format": "csv", **params})
+        self.assertEqual(response["Content-Type"], "text/csv")
+        return response.content.decode().splitlines()
+
+    def test_household_export_is_scoped(self):
+        lines = self.csv("parishchief", "registry:household_list")
+        self.assertTrue(lines[0].startswith("NIN,Head of household"))
+        self.assertTrue(any("Grace Nakato" in line for line in lines))
+        self.assertFalse(any("Annet Nakiyimba" in line for line in lines))  # another parish
+
+    def test_export_keeps_the_filters(self):
+        lines = self.csv("national", "loans:loan_list", status="defaulted")
+        self.assertEqual(len(lines), 2)  # header + Joyce
+        self.assertIn("Joyce Nalwoga", lines[1])
+
+    def test_arrears_and_complaints_exports(self):
+        self.assertTrue(any("Henry Mubiru" in line for line in self.csv("subcounty", "loans:arrears_list")))
+        self.assertTrue(any("PDM-" in line for line in self.csv("subcounty", "feedback:complaint_list")))
+
+    def test_export_still_needs_the_role(self):
+        self.client.force_login(User.objects.get(username="district"))
+        self.assertEqual(self.client.get(reverse("registry:household_list"), {"format": "csv"}).status_code, 403)

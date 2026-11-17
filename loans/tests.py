@@ -573,5 +573,6 @@ class MakerCheckerTests(TestCase):
         self.assertTrue(workflow.can_move(self.loan, Status.DISBURSED, self.appraiser))
 
     def test_seeded_decisions_were_made_by_someone_other_than_the_appraiser(self):
+        # Loans entered from paper files (the Wakiso sample) name no officials, so they are skipped.
         for loan in LoanApplication.objects.exclude(decided_by=None).select_related("appraisal"):
             self.assertNotEqual(loan.decided_by_id, loan.appraisal.appraised_by_id, loan)
