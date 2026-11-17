@@ -14,7 +14,7 @@ from accounts import access
 from accounts.mixins import RoleRequiredMixin
 from registry.models import AdminUnit
 
-from . import public, queries, workspace
+from . import public, queries, reports, workspace
 
 DASHBOARD_ROLES = access.roles_for("dashboard")  # from the access policy
 
@@ -202,3 +202,24 @@ def parish_open_data(request, pk):
     for measure, value in figures.items():
         writer.writerow([parish.name, measure, "" if value is None else value, timezone.localdate().isoformat()])
     return response
+
+
+class QuarterlyReportView(RoleRequiredMixin, TemplateView):
+    """The quarterly report for the user's area. ?q=2026-Q4 picks the quarter; it prints to PDF."""
+
+    template_name = "dashboards/quarterly_report.html"
+    allowed_roles = access.roles_for("quarterly_report")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        current = reports.current_quarter()
+        quarter = reports.Quarter.parse(self.request.GET.get("q", "")) or current
+        context.update(
+            quarter=quarter,
+            quarters=current.recent(4),
+            figures=reports.quarterly_figures(user, quarter),
+            rows=queries.breakdown(user),
+            area_name=user.admin_unit.name if user.admin_unit and not user.is_national else "Uganda (all districts)",
+        )
+        return context
