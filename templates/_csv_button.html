@@ -1,0 +1,1 @@
+<a class="btn btn-outline-secondary" href="?{% for k, v in request.GET.items %}{% if k != 'page' and k != 'format' %}{{ k }}={{ v|urlencode }}&amp;{% endif %}{% endfor %}format=csv">Download CSV</a>

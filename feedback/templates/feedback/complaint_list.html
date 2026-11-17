@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Complaints · PDM Tracking System{% endblock %}
 {% block content %}
-<h1 class="h3 mb-1">Complaints</h1>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1"><h1 class="h3 mb-0">Complaints</h1>{% include "_csv_button.html" %}</div>
 <p class="text-muted">From households in your area, by USSD or the web. A complaint not resolved within 7 days moves up a level: parish, then sub-county, then district. Bribery complaints start at the sub-county.</p>
 <form class="row g-2 mb-3" method="get">
   <div class="col-md-4"><select class="form-select" name="status" aria-label="Status"><option value="">All statuses</option><option value="unresolved" {% if request.GET.status == "unresolved" %}selected{% endif %}>Not resolved</option>{% for value, label in statuses %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
