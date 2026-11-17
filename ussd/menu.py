@@ -15,12 +15,17 @@ Status = LoanApplication.Status
 MAX_LENGTH = 182  # longest screen most phones show
 
 
+def _fit(reply):
+    """Shorten a reply that would not fit on one screen, ending it with an ellipsis."""
+    return reply if len(reply) <= MAX_LENGTH else reply[: MAX_LENGTH - 1].rstrip() + "…"
+
+
 def con(text):
-    return f"CON {text}"[:MAX_LENGTH]
+    return _fit(f"CON {text}")
 
 
 def end(text):
-    return f"END {text}"[:MAX_LENGTH]
+    return _fit(f"END {text}")
 
 
 def find_household(phone):
