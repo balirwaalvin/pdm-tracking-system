@@ -10,5 +10,6 @@ urlpatterns = [
     path("registry/", include("registry.urls")),
     path("saccos/", include("saccos.urls")),
     path("loans/", include("loans.urls")),
+    path("ussd/", include("ussd.urls")),
     path("", include("dashboards.urls")),
 ]
