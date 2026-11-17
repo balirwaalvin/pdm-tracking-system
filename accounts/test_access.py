@@ -106,7 +106,9 @@ class WorkspaceTests(TestCase):
         response = self.home("sacco")
         tasks = {t["label"]: t["count"] for t in response.context["tasks"]}
         self.assertEqual(tasks["Applications to appraise"], 1)  # Isaac
-        self.assertEqual(tasks["Appraised loans to decide"], 1)  # Grace
+        self.assertEqual(tasks["Appraised loans to decide"], 0)  # sacco appraised Grace's loan itself
+        chair_tasks = {t["label"]: t["count"] for t in self.home("saccochair").context["tasks"]}
+        self.assertEqual(chair_tasks["Appraised loans to decide"], 1)  # so the Board chair decides it
         self.assertEqual(tasks["Approved loans to pay out"], 1)  # Ronald
         self.assertEqual(tasks["Loans in arrears"], 2)  # Henry and Joyce
 

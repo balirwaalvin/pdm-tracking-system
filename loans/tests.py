@@ -162,7 +162,7 @@ class DecisionTests(TestCase):
         self.grace_loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")  # appraised
         self.isaac_loan = LoanApplication.objects.get(household__nin="CM92004567EFGH")  # submitted
 
-    def decide(self, loan, decision, reason="", username="sacco"):
+    def decide(self, loan, decision, reason="", username="saccochair"):  # sacco appraised it
         self.client.force_login(User.objects.get(username=username))
         return self.client.post(
             reverse("loans:loan_decide", args=[loan.pk]), {"decision": decision, "reason": reason}
@@ -172,7 +172,7 @@ class DecisionTests(TestCase):
         self.decide(self.grace_loan, "approve")
         self.grace_loan.refresh_from_db()
         self.assertEqual(self.grace_loan.status, Status.APPROVED)
-        self.assertEqual(self.grace_loan.decided_by.username, "sacco")
+        self.assertEqual(self.grace_loan.decided_by.username, "saccochair")
         self.assertIsNotNone(self.grace_loan.decided_at)
 
     def test_rejection_keeps_the_reason(self):
@@ -201,7 +201,7 @@ class DecisionTests(TestCase):
 
     def test_decision_form_shows_only_for_the_sacco_official(self):
         url = reverse("loans:loan_detail", args=[self.grace_loan.pk])
-        self.client.force_login(User.objects.get(username="sacco"))
+        self.client.force_login(User.objects.get(username="saccochair"))
         self.assertContains(self.client.get(url), "Record decision")
         self.client.force_login(User.objects.get(username="pdc"))
         self.assertNotContains(self.client.get(url), "Record decision")
@@ -217,7 +217,7 @@ class DisbursementTests(TestCase):
     def setUp(self):
         self.sacco_user = User.objects.get(username="sacco")
         self.loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
-        workflow.move(self.loan, Status.APPROVED, self.sacco_user, reason="Approved by the Board.")
+        workflow.move(self.loan, Status.APPROVED, User.objects.get(username="saccochair"), reason="Approved by the Board.")
 
     def disburse(self, username="sacco", loan=None, **overrides):
         loan = loan or self.loan
@@ -322,13 +322,14 @@ class WorkflowEndToEndTests(TestCase):
         grace_loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")  # appraised
         with self.assertRaises(workflow.TransitionError):
             workflow.move(grace_loan, Status.DISBURSED, sacco)
-        workflow.move(grace_loan, Status.REJECTED, sacco, reason="No market.")
+        chair = User.objects.get(username="saccochair")
+        workflow.move(grace_loan, Status.REJECTED, chair, reason="No market.")
         with self.assertRaises(workflow.TransitionError):
-            workflow.move(grace_loan, Status.APPROVED, sacco)
+            workflow.move(grace_loan, Status.APPROVED, chair)
 
     def test_disbursement_by_the_wrong_role_is_refused(self):
         grace_loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
-        workflow.move(grace_loan, Status.APPROVED, User.objects.get(username="sacco"))
+        workflow.move(grace_loan, Status.APPROVED, User.objects.get(username="saccochair"))
         with self.assertRaises(PermissionDenied):
             workflow.move(grace_loan, Status.DISBURSED, User.objects.get(username="district"))
 
@@ -376,7 +377,7 @@ class RepaymentTests(TestCase):
         self.sacco_user = User.objects.get(username="sacco")
         # Grace's loan, paid out 100 days ago: 3 instalments of 70,666 have fallen due.
         self.loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
-        workflow.move(self.loan, Status.APPROVED, self.sacco_user)
+        workflow.move(self.loan, Status.APPROVED, User.objects.get(username="saccochair"))
         workflow.move(self.loan, Status.DISBURSED, self.sacco_user)
         self.paid_out_on = timezone.localdate() - datetime.timedelta(days=100)
         Disbursement.objects.create(
@@ -478,7 +479,7 @@ class DefaultTests(TestCase):
     def setUp(self):
         sacco = User.objects.get(username="sacco")
         self.loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
-        workflow.move(self.loan, Status.APPROVED, sacco)
+        workflow.move(self.loan, Status.APPROVED, User.objects.get(username="saccochair"))
         workflow.move(self.loan, Status.DISBURSED, sacco)
         self.paid_out_on = datetime.date(2026, 1, 10)  # first instalment due 10 Feb 2026
         Disbursement.objects.create(
@@ -521,3 +522,56 @@ class DefaultTests(TestCase):
     def test_people_cannot_flag_a_default(self):
         with self.assertRaises(PermissionDenied):
             workflow.move(self.loan, Status.DEFAULTED, User.objects.get(username="sacco"))
+
+
+class MakerCheckerTests(TestCase):
+    """The official who appraised a loan cannot also approve or reject it."""
+
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.client.defaults["HTTP_HOST"] = "localhost"
+        self.loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")  # appraised by "sacco"
+        self.appraiser = User.objects.get(username="sacco")
+
+    def test_appraiser_cannot_approve_or_reject(self):
+        for target in (Status.APPROVED, Status.REJECTED):
+            self.assertFalse(workflow.can_move(self.loan, target, self.appraiser))
+            with self.assertRaises(workflow.SeparationOfDutiesError):
+                workflow.move(self.loan, target, self.appraiser, reason="x")
+        self.loan.refresh_from_db()
+        self.assertEqual(self.loan.status, Status.APPRAISED)
+
+    def test_even_a_superuser_who_appraised_cannot_decide(self):
+        self.appraiser.is_superuser = True
+        with self.assertRaises(workflow.SeparationOfDutiesError):
+            workflow.move(self.loan, Status.APPROVED, self.appraiser)
+
+    def test_appraiser_posting_a_decision_is_refused_with_a_message(self):
+        self.client.force_login(self.appraiser)
+        response = self.client.post(reverse("loans:loan_decide", args=[self.loan.pk]), {"decision": "approve"}, follow=True)
+        self.assertContains(response, "Another SACCO official must decide")
+        self.loan.refresh_from_db()
+        self.assertEqual(self.loan.status, Status.APPRAISED)
+
+    def test_appraiser_sees_a_note_instead_of_the_decision_form(self):
+        self.client.force_login(self.appraiser)
+        response = self.client.get(reverse("loans:loan_detail", args=[self.loan.pk]))
+        self.assertNotContains(response, "Record decision")
+        self.assertContains(response, "Maker-checker")
+
+    def test_a_second_official_decides(self):
+        chair = User.objects.get(username="saccochair")
+        workflow.move(self.loan, Status.APPROVED, chair)
+        self.assertEqual(self.loan.decided_by, chair)
+        self.assertNotEqual(self.loan.decided_by, self.loan.appraisal.appraised_by)
+
+    def test_appraiser_can_still_pay_out_after_another_official_approves(self):
+        workflow.move(self.loan, Status.APPROVED, User.objects.get(username="saccochair"))
+        self.assertTrue(workflow.can_move(self.loan, Status.DISBURSED, self.appraiser))
+
+    def test_seeded_decisions_were_made_by_someone_other_than_the_appraiser(self):
+        for loan in LoanApplication.objects.exclude(decided_by=None).select_related("appraisal"):
+            self.assertNotEqual(loan.decided_by_id, loan.appraisal.appraised_by_id, loan)

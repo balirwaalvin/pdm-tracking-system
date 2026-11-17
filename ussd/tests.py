@@ -166,7 +166,8 @@ class LoanAlertTests(TestCase):
         seed()
 
     def setUp(self):
-        self.client.force_login(User.objects.get(username="sacco"))
+        # The Board chair decides (maker-checker: "sacco" appraised this loan) and can also pay out.
+        self.client.force_login(User.objects.get(username="saccochair"))
         self.loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")  # Grace, appraised
 
     def post(self, name, data):
@@ -203,7 +204,7 @@ class LoanAlertTests(TestCase):
 
     def test_full_repayment_text_says_the_loan_is_repaid(self):
         today = timezone.localdate().isoformat()
-        workflow.move(self.loan, Status.APPROVED, User.objects.get(username="sacco"))
+        workflow.move(self.loan, Status.APPROVED, User.objects.get(username="saccochair"))
         self.post("loans:loan_disburse", {"amount": 800_000, "disbursed_on": today, "method": "bank", "reference": "T9"})
         self.post("loans:loan_repay", {"amount": 848_000, "paid_on": today, "method": "bank", "reference": "R9"})
         self.assertIn("fully repaid", self.texts()[-1])

@@ -136,12 +136,12 @@ class AuditLogTests(TestCase):
         self.assertTrue(all(e.actor.username == "sacco" for e in response.context["entries"]))
 
     def test_a_status_change_shows_who_made_it(self):
-        sacco = User.objects.get(username="sacco")
-        self.client.force_login(sacco)
+        chair = User.objects.get(username="saccochair")
+        self.client.force_login(chair)
         loan = LoanApplication.objects.get(household__nin="CF85001234ABCD")
         self.client.post(reverse("loans:loan_decide", args=[loan.pk]), {"decision": "approve"})
         entry = LogEntry.objects.get_for_object(loan).filter(action=LogEntry.Action.UPDATE).latest("timestamp")
-        self.assertEqual(entry.actor, sacco)
+        self.assertEqual(entry.actor, chair)
         self.login("auditor")
         self.assertContains(self.client.get(reverse("audit_log"), {"q": "Grace"}), "appraised → approved")
 
