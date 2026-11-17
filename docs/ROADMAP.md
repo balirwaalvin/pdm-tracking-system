@@ -6,11 +6,11 @@ The final presentation is on **Thu 26 Nov 2026**, so the old buffer (27–30 Nov
 
 ## Wed 18 Nov: citizen voice, part 1 (Must)
 
-- [ ] Complaints in the `feedback` app: category, description, reference number (for example `PDM-2611-0042`), status (open, in progress, resolved) and responses.
-- [ ] Raise a complaint by USSD (new option "3. Report a problem") and from the household's "My household" page. Send an SMS with the reference number.
-- [ ] Complaint list and response page for the officials who handle them (Parish Chief, then sub-county CDO, then district), scoped to their area.
-- [ ] Automatic escalation (moved up from the buffer): a complaint not answered in 7 days moves up one level. It runs in the same daily job as `flag_defaults`.
-- [ ] Track a complaint by its reference number on USSD.
+- [x] Complaints in the `feedback` app: category, description, reference number (for example `PDM-2611-0042`), status (open, in progress, resolved) and responses.
+- [x] Raise a complaint by USSD (new option "3. Report a problem") and from the household's "My household" page. Send an SMS with the reference number.
+- [x] Complaint list and response page for the officials who handle them (Parish Chief, then sub-county CDO, then district), scoped to their area.
+- [x] Automatic escalation (moved up from the buffer): a complaint not answered in 7 days moves up one level. It runs in the same daily job as `flag_defaults`.
+- [x] Track a complaint by its reference number on USSD.
 
 ## Thu 19 Nov: citizen voice, part 2 (Must)
 
