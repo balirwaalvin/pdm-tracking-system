@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from accounts import access
+from dashboards.exports import CsvExportMixin
 from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_required
 from accounts.scoping import check_unit_in_scope
 
@@ -18,7 +19,16 @@ HOUSEHOLD_VIEW_ROLES = access.roles_for("households")
 GROUP_VIEW_ROLES = access.roles_for("groups")
 
 
-class HouseholdListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
+class HouseholdListView(RoleRequiredMixin, ScopedQuerysetMixin, CsvExportMixin, ListView):
+    csv_filename = "households"
+    csv_header = ["NIN", "Head of household", "Sex", "Age group", "Disability", "Size", "Wealth rank",
+                  "Village", "Parish", "Group", "Verification", "Phone"]
+
+    def csv_row(self, h):
+        return [h.nin, h.head_name, h.get_sex_display(), h.get_age_group_display(), "Yes" if h.has_disability else "No",
+                h.household_size, h.get_wealth_rank_display(), h.village.name, h.village.parent.name,
+                h.enterprise_group.name if h.enterprise_group else "", h.get_verification_display(), h.phone]
+
     model = Household
     allowed_roles = HOUSEHOLD_VIEW_ROLES
     unit_field = "village"

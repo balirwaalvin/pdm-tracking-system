@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView
 
 from accounts import access
+from dashboards.exports import CsvExportMixin
 from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_required
 from accounts.scoping import check_unit_in_scope
 
@@ -21,7 +22,17 @@ LOAN_VIEW_ROLES = access.roles_for("loans")  # from the access policy
 SACCO_LOAN_ROLES = access.roles_for("appraise_loan")
 
 
-class LoanListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
+class LoanListView(RoleRequiredMixin, ScopedQuerysetMixin, CsvExportMixin, ListView):
+    csv_filename = "loans"
+    csv_header = ["Loan", "Household", "Village", "Group", "SACCO", "Amount (UGX)", "Term (months)", "Status",
+                  "Paid out (UGX)", "Repaid (UGX)", "Balance (UGX)", "In arrears (UGX)"]
+
+    def csv_row(self, loan):
+        paid_out = loan.disbursement.amount if hasattr(loan, "disbursement") else 0
+        return [loan.pk, loan.household.head_name, loan.household.village.name, loan.enterprise_group.name,
+                loan.sacco.name, loan.amount, loan.term_months, loan.get_status_display(), paid_out,
+                loan.total_repaid, loan.balance, loan.arrears()]
+
     model = LoanApplication
     allowed_roles = LOAN_VIEW_ROLES
     unit_field = "household__village"
@@ -283,7 +294,15 @@ class RepaymentCreateView(RoleRequiredMixin, CreateView):
         return redirect("loans:loan_detail", pk=self.loan.pk)
 
 
-class ArrearsListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
+class ArrearsListView(RoleRequiredMixin, ScopedQuerysetMixin, CsvExportMixin, ListView):
+    csv_filename = "arrears"
+    csv_header = ["Loan", "Household", "Village", "SACCO", "In arrears (UGX)", "Days overdue", "Balance (UGX)", "Status"]
+
+    def csv_row(self, row):
+        loan = row["loan"]
+        return [loan.pk, loan.household.head_name, loan.household.village.name, loan.sacco.name,
+                row["arrears"], row["days"], row["balance"], loan.get_status_display()]
+
     """Paid-out loans with instalments overdue, oldest arrears first."""
 
     model = LoanApplication

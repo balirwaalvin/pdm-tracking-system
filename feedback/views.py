@@ -9,13 +9,23 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 from accounts import access
 from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_required
 from accounts.scoping import check_unit_in_scope
+from dashboards.exports import CsvExportMixin
 
 from . import services, stories
 from .forms import ComplaintForm, ResponseForm, StoryCheckForm, StoryForm
 from .models import Complaint, SuccessStory
 
 
-class ComplaintListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
+class ComplaintListView(RoleRequiredMixin, ScopedQuerysetMixin, CsvExportMixin, ListView):
+    csv_filename = "complaints"
+    csv_header = ["Reference", "Household", "Village", "Category", "Channel", "Received", "With", "Escalations",
+                  "Status", "Resolved"]
+
+    def csv_row(self, c):
+        return [c.reference, c.household.head_name, c.household.village.name, c.get_category_display(),
+                c.get_channel_display(), c.created_at.date().isoformat(), c.get_level_display(), c.escalation_count,
+                c.get_status_display(), c.resolved_at.date().isoformat() if c.resolved_at else ""]
+
     model = Complaint
     allowed_roles = access.roles_for("complaints")
     unit_field = "household__village"
