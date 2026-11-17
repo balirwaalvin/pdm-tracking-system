@@ -18,6 +18,8 @@ from django.utils import timezone
 
 import datetime
 
+from feedback.models import Complaint, ComplaintResponse
+from feedback.services import escalate_overdue
 from loans import workflow
 from loans.models import Appraisal, Disbursement, LoanApplication, Repayment
 from registry.models import AdminUnit, EnterpriseGroup, Household
@@ -89,6 +91,7 @@ class Command(BaseCommand):
         self.create_groups_and_households(units)
         self.create_saccos(units)
         self.create_loans()
+        self.create_complaints()
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
 
     def create_units(self):
@@ -360,3 +363,44 @@ class Command(BaseCommand):
                 if loan.status == LoanApplication.Status.DISBURSED and loan.repayments.exists():
                     workflow.after_repayment(loan)
                 workflow.flag_default(loan)
+
+    def create_complaints(self):
+        """One complaint at each stage: open, being handled, resolved, escalated, and a bribery report."""
+        now = timezone.now()
+        parish_chief = User.objects.get(username="parishchief")
+        C = Complaint
+        # NIN, category, channel, days ago, description, response (status, days ago, message) or None
+        complaints = [
+            ("CM92004567EFGH", C.Category.LOAN_DELAY, C.Channel.WEB, 2,
+             "I applied for my broiler loan two weeks ago and have heard nothing from the SACCO.", None),
+            ("CF70007890IJKL", C.Category.VERIFICATION, C.Channel.USSD, 5,
+             "I have lived in Seeta Central for 20 years but I am still waiting to be verified.",
+             (C.Status.IN_PROGRESS, 3, "The LC I chairperson will visit you this week to verify your household.")),
+            ("CM86002468KLMN", C.Category.LOAN_DELAY, C.Channel.USSD, 20,
+             "My loan was approved but the money has not reached my mobile money account.",
+             (C.Status.RESOLVED, 18, "The SACCO resent the payout to the right number. Please check your mobile money.")),
+            ("CM93006802ABCE", C.Category.REPAYMENT, C.Channel.USSD, 10,
+             "I paid UGX 52,250 in cash but my balance did not go down.", None),
+            ("CF76001357GHIJ", C.Category.BRIBERY, C.Channel.USSD, 4,
+             "Someone said I must pay UGX 50,000 to be put on the PDM list.", None),
+        ]
+        for nin, category, channel, days_ago, description, response in complaints:
+            household = Household.objects.get(nin=nin)
+            created = now - datetime.timedelta(days=days_ago)
+            complaint, made = Complaint.objects.get_or_create(
+                household=household,
+                description=description,
+                defaults={"category": category, "channel": channel, "created_at": created, "awaiting_since": created},
+            )
+            if made and response:
+                status, response_days_ago, message = response
+                answered = now - datetime.timedelta(days=response_days_ago)
+                ComplaintResponse.objects.create(
+                    complaint=complaint, message=message, status_after=status, responded_by=parish_chief, created_at=answered
+                )
+                complaint.status = status
+                complaint.awaiting_since = None if status == C.Status.RESOLVED else answered
+                complaint.resolved_at = answered if status == C.Status.RESOLVED else None
+                complaint.save()
+        escalate_overdue(now)  # Henry's repayment complaint has waited 10 days, so it moves to the sub-county
+        self.stdout.write(f"  {Complaint.objects.count()} complaints")
