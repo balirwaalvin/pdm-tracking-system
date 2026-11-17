@@ -6,6 +6,8 @@ Replies start with "CON" (wait for another answer) or "END" (close).
 The household is found by the phone number it dials from.
 """
 
+from feedback import services as feedback
+from feedback.models import Complaint
 from loans.models import LoanApplication
 from registry.models import Household
 
@@ -48,11 +50,18 @@ def respond(phone, text):
 
     answers = [part for part in (text or "").split("*") if part != ""]
     if not answers:
-        return con(f"PDM (prototype)\n{household.head_name}\n1. My PDM status\n2. My loan")
+        return con(
+            f"PDM (prototype)\n{household.head_name}\n1. My PDM status\n2. My loan\n"
+            "3. Report a problem\n4. Track a complaint"
+        )
     if answers[0] == "1":
         return end(status_text(household))
     if answers[0] == "2":
         return end(loan_text(household))
+    if answers[0] == "3":
+        return report_problem(household, answers[1:])
+    if answers[0] == "4":
+        return track_complaint(household, answers[1:])
     return end("Invalid choice. Please dial again.")
 
 
@@ -100,3 +109,47 @@ def loan_text(household):
     if loan.status == Status.DEFAULTED:
         lines.append("In default: visit your SACCO.")
     return "\n".join(lines)
+
+
+# Short labels for a phone screen, in the same order as Complaint.Category.
+CATEGORY_MENU = [
+    (Complaint.Category.LOAN_DELAY, "Loan delayed"),
+    (Complaint.Category.VERIFICATION, "Left out or rejected"),
+    (Complaint.Category.REPAYMENT, "Repayment record"),
+    (Complaint.Category.SACCO, "SACCO or official"),
+    (Complaint.Category.BRIBERY, "Asked for a bribe"),
+    (Complaint.Category.OTHER, "Other"),
+]
+
+
+def report_problem(household, answers):
+    """3 -> choose a category -> describe -> reference number."""
+    if not answers:
+        options = "\n".join(f"{i}. {label}" for i, (_, label) in enumerate(CATEGORY_MENU, start=1))
+        return con(f"Problem is about:\n{options}")
+    choice = answers[0]
+    if not choice.isdigit() or not 1 <= int(choice) <= len(CATEGORY_MENU):
+        return end("Invalid choice. Please dial again.")
+    if len(answers) == 1:
+        return con("Describe the problem in a few words:")
+    description = "*".join(answers[1:]).strip()
+    if len(description) < 3:
+        return end("Please dial again and describe the problem.")
+    category = CATEGORY_MENU[int(choice) - 1][0]
+    complaint = feedback.raise_complaint(household, category, description, Complaint.Channel.USSD)
+    return end(f"Received. Ref {complaint.reference}. You will get an answer within 7 days. PDM services are free.")
+
+
+def track_complaint(household, answers):
+    """4 -> enter the reference number -> status and the latest reply. Own complaints only."""
+    if not answers:
+        return con("Enter your complaint number (the digits after PDM-):")
+    digits = "".join(ch for ch in answers[0] if ch.isdigit())
+    complaint = household.complaints.filter(pk=int(digits)).first() if digits else None
+    if complaint is None:
+        return end("No complaint with that number for this phone.")
+    lines = [f"{complaint.reference}: {complaint.get_status_display()}", f"With the {complaint.get_level_display().lower()} office"]
+    latest = complaint.responses.order_by("-created_at").first()
+    if latest:
+        lines.append(f"Reply: {latest.message}")
+    return end("\n".join(lines))
