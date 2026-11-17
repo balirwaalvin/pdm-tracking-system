@@ -46,6 +46,24 @@ class User(AbstractUser):
         return self.get_full_name() or self.username
 
 
+class SignInEvent(models.Model):
+    """Every sign-in attempt, successful or not, for the auditor and for lockout."""
+
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="sign_ins")
+    username = models.CharField(max_length=150, help_text="As typed, even if no such user exists.")
+    succeeded = models.BooleanField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{'Sign-in' if self.succeeded else 'Failed sign-in'} by {self.username} at {self.created_at:%Y-%m-%d %H:%M}"
+
+
 from auditlog.registry import auditlog  # noqa: E402
 
 auditlog.register(User, exclude_fields=["password", "last_login"])
+auditlog.register(SignInEvent)
