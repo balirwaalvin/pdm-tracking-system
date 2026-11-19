@@ -1,0 +1,25 @@
+# Keep the free Render instance awake for the rehearsal and the presentation, so nobody
+# waits ~50 seconds for a cold start. Runs every 10 minutes, 07:00 to 19:00 Kampala time
+# (04:00 to 16:00 UTC), on 25 and 26 November only. Can also be started by hand from the
+# Actions tab ("Run workflow"). GitHub may start scheduled runs a few minutes late.
+name: Keep awake
+
+on:
+  schedule:
+    - cron: "*/10 4-15 25,26 11 *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open the sign-in page
+        run: |
+          for attempt in 1 2 3; do
+            if curl -fsS --max-time 90 -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" https://pdm.treez.tech/accounts/login/; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed; retrying in 20 seconds"
+            sleep 20
+          done
+          exit 1
