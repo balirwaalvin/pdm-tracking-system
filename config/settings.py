@@ -188,3 +188,15 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
+
+# HTTPS only in production (set on Render). Off by default so local work and tests use plain HTTP.
+SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "False").lower() == "true"
+SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))
+# Not including subdomains or preloading: treez.tech hosts other sites, and preloading is hard to undo.
+SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
+# The USSD callback must be public for Africa's Talking, so when this is set it also
+# requires ?token=<value> in the callback address. Leave empty locally.
+USSD_CALLBACK_TOKEN = os.environ.get("USSD_CALLBACK_TOKEN", "")
