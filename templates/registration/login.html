@@ -1,20 +1,50 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 {% block title %}Sign in · PDM Tracking System{% endblock %}
-{% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-4">
-    <div class="card shadow-sm mt-4">
-      <div class="card-body p-4">
-        <h1 class="h4 mb-3">Sign in</h1>
-        <form method="post">
+{% block body %}
+<div class="auth-wrap">
+  <section class="auth-art">
+    <div>
+      <p class="page-eyebrow mb-2">Parish Development Model</p>
+      <h1 class="display-6 fw-bold mb-3">One shared record, from the village to the ministry</h1>
+      <p class="lead mb-4">Households, LC I chairpersons, Parish Chiefs, SACCOs and officials at every level work from the same live record. Every decision is signed by a named official.</p>
+      <ul class="auth-points">
+        <li><i class="bi bi-shield-check"></i><span>Each role sees only its own work, in its own area</span></li>
+        <li><i class="bi bi-phone"></i><span>Households check their status and raise complaints by USSD, free</span></li>
+        <li><i class="bi bi-graph-up-arrow"></i><span>Live dashboards and a full audit trail for oversight</span></li>
+      </ul>
+    </div>
+    {% include "includes/parish_art.svg" %}
+  </section>
+
+  <section class="auth-form">
+    <div class="auth-card">
+      <div class="card shadow-sm"><div class="card-body p-4 p-md-5">
+        <h2 class="h4 mb-1">Sign in</h2>
+        <p class="text-muted mb-4">Use the account your office gave you.</p>
+        <form method="post" novalidate>
           {% csrf_token %}
           {{ form|crispy }}
           <input type="hidden" name="next" value="{{ next }}">
-          <button type="submit" class="btn btn-pdm w-100">Sign in</button>
+          <button type="submit" class="btn btn-pdm w-100 py-2">Sign in</button>
         </form>
-      </div>
+      </div></div>
+
+      <details class="card shadow-sm mt-3 demo-accounts"><summary class="card-body py-3 fw-semibold" style="cursor:pointer">Demo accounts for the presentation</summary>
+        <div class="card-body pt-0">
+          <p class="mb-2">Every password is <code>pdm12345</code>. Sample people only.</p>
+          <div class="row row-cols-2 g-1">
+            <div><code>household</code> Household</div><div><code>lc1</code> LC I Chairperson</div>
+            <div><code>groupexec</code> Group executive</div><div><code>parishchief</code> Parish Chief</div>
+            <div><code>pdc</code> Parish Dev. Committee</div><div><code>sacco</code> SACCO (appraises)</div>
+            <div><code>saccochair</code> SACCO (decides)</div><div><code>subcounty</code> Sub-county / CDO</div>
+            <div><code>district</code> District official</div><div><code>national</code> PDM Secretariat</div>
+            <div><code>auditor</code> Auditor</div>
+          </div>
+        </div>
+      </details>
+      <p class="text-center small text-muted mt-3"><a href="{% url 'public_parishes' %}">See public parish figures</a> without signing in.</p>
     </div>
-  </div>
+  </section>
 </div>
 {% endblock %}
