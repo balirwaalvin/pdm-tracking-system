@@ -9,13 +9,13 @@
   <a class="btn btn-outline-secondary" href="?{% if query_string %}{{ query_string }}&{% endif %}format=csv">Download CSV</a>
 </div>
 <form class="row g-2 mb-3" method="get">
-  <div class="col-md-3"><select class="form-select" name="model" aria-label="Record type"><option value="">All record types</option>{% for ct in models %}<option value="{{ ct.pk }}" {% if request.GET.model == ct.pk|stringformat:"s" %}selected{% endif %}>{{ ct.name|capfirst }}</option>{% endfor %}</select></div>
-  <div class="col-md-2"><select class="form-select" name="action" aria-label="Action"><option value="">All actions</option>{% for value, label in actions %}<option value="{{ value }}" {% if request.GET.action == value|stringformat:"s" %}selected{% endif %}>{{ label|capfirst }}</option>{% endfor %}</select></div>
-  <div class="col-md-2"><input class="form-control" name="actor" value="{{ request.GET.actor }}" placeholder="Username" aria-label="Username"></div>
-  <div class="col-md-2"><input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Record name" aria-label="Record name"></div>
-  <div class="col-6 col-md-1"><input class="form-control" type="date" name="from" value="{{ request.GET.from }}" aria-label="From"></div>
-  <div class="col-6 col-md-1"><input class="form-control" type="date" name="to" value="{{ request.GET.to }}" aria-label="To"></div>
-  <div class="col-md-1"><button class="btn btn-outline-secondary w-100">Filter</button></div>
+  <div class="col-md-6 col-lg-3"><select class="form-select" name="model" aria-label="Record type"><option value="">All record types</option>{% for ct in models %}<option value="{{ ct.pk }}" {% if request.GET.model == ct.pk|stringformat:"s" %}selected{% endif %}>{{ ct.name|capfirst }}</option>{% endfor %}</select></div>
+  <div class="col-md-6 col-lg-3"><select class="form-select" name="action" aria-label="Action"><option value="">All actions</option>{% for value, label in actions %}<option value="{{ value }}" {% if request.GET.action == value|stringformat:"s" %}selected{% endif %}>{{ label|capfirst }}</option>{% endfor %}</select></div>
+  <div class="col-md-6 col-lg-3"><input class="form-control" name="actor" value="{{ request.GET.actor }}" placeholder="Username" aria-label="Username"></div>
+  <div class="col-md-6 col-lg-3"><input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Record name" aria-label="Record name"></div>
+  <div class="col-6 col-lg-3"><label class="visually-hidden" for="from">From</label><input class="form-control" type="date" id="from" name="from" value="{{ request.GET.from }}" aria-label="From"></div>
+  <div class="col-6 col-lg-3"><label class="visually-hidden" for="to">To</label><input class="form-control" type="date" id="to" name="to" value="{{ request.GET.to }}" aria-label="To"></div>
+  <div class="col-lg-2"><button class="btn btn-outline-secondary w-100">Filter</button></div>
 </form>
 <div class="card shadow-sm"><div class="table-responsive">
   <table class="table table-sm mb-0 align-top small">
