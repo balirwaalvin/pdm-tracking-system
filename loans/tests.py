@@ -247,6 +247,7 @@ class DisbursementTests(TestCase):
         self.assertEqual(self.loan.status, Status.APPROVED)
 
     def test_cannot_pay_out_more_than_the_sacco_holds(self):
+        self.loan.sacco.releases.exclude(financial_year="2025/26").delete()  # keep one confirmed release
         release = self.loan.sacco.releases.get()
         release.amount = self.loan.sacco.total_disbursed + 500_000
         release.save()

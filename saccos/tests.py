@@ -52,7 +52,7 @@ class SaccoTests(TestCase):
     def test_national_records_release_for_eligible_sacco(self):
         self.login("national")
         self.client.post(reverse("saccos:release_create", args=[self.seeta.pk]), self.release_data())
-        release = FundRelease.objects.get(financial_year="2026/27")
+        release = FundRelease.objects.filter(sacco=self.seeta).latest("pk")  # the seed already has 2026/27
         self.assertEqual(release.recorded_by.username, "national")
         self.assertFalse(release.is_confirmed)
 
