@@ -63,7 +63,9 @@ class FundReleaseCreateView(RoleRequiredMixin, CreateView):
     allowed_roles = access.roles_for("record_release")
 
     def dispatch(self, request, *args, **kwargs):
-        self.sacco = get_object_or_404(Sacco, pk=kwargs["sacco_pk"])
+        # Only look the SACCO up for signed-in users, so others get the sign-in page, not "not found".
+        if request.user.is_authenticated:
+            self.sacco = get_object_or_404(Sacco, pk=kwargs["sacco_pk"])
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
