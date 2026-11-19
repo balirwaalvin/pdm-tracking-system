@@ -7,7 +7,7 @@
   <p class="text-muted">{{ loan.household.head_name }} · UGX {{ loan.amount|intcomma }} · {{ loan.enterprise }}</p>
   <div class="card shadow-sm mb-3"><div class="card-body small"><strong>Business plan:</strong> {{ loan.business_plan|linebreaksbr }}</div></div>
   <div class="card shadow-sm"><div class="card-body">
-    <form method="post" novalidate>{% csrf_token %}{{ form|crispy }}
+    <form method="post" class="inline-choices" novalidate>{% csrf_token %}{{ form|crispy }}
       <div class="d-flex gap-2"><button class="btn btn-pdm">Save appraisal</button><a class="btn btn-outline-secondary" href="{% url 'loans:loan_detail' loan.pk %}">Cancel</a></div>
     </form>
   </div></div>

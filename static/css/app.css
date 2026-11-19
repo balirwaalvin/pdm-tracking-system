@@ -228,3 +228,6 @@ a { text-underline-offset: 3px; }
 .story-card { border-top: 4px solid var(--pdm-green); }
 .story-card p:not(.small) { font-size: 1.02rem; line-height: 1.6; }
 .hero .btn-outline-light { border-color: rgba(255,255,255,.5); }
+
+/* Radio choices in a row (appraisal scores, recommendation) */
+.inline-choices .form-check { display: inline-flex; align-items: center; gap: .35rem; margin-right: 1.25rem; }

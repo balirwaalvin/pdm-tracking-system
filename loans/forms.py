@@ -63,6 +63,16 @@ class LoanApplicationForm(forms.ModelForm):
 
 
 class AppraisalForm(forms.ModelForm):
+    """Scores of 1 to 5 with no blank choice, and a recommendation with reasons."""
+
+    SCORE_FIELDS = ("viability_score", "repayment_score", "group_score")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in self.SCORE_FIELDS:
+            self.fields[name].choices = Appraisal.SCORE_CHOICES
+        self.fields["recommendation"].choices = Appraisal.Recommendation.choices
+
     class Meta:
         model = Appraisal
         fields = ["viability_score", "repayment_score", "group_score", "recommendation", "reasons"]
@@ -70,6 +80,7 @@ class AppraisalForm(forms.ModelForm):
             "viability_score": forms.RadioSelect,
             "repayment_score": forms.RadioSelect,
             "group_score": forms.RadioSelect,
+            "recommendation": forms.RadioSelect,
             "reasons": forms.Textarea(attrs={"rows": 4}),
         }
 
