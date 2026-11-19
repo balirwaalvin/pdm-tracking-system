@@ -97,6 +97,14 @@ The USSD callback is `POST /ussd/callback/` (no login; Africa's Talking sends `s
 
 SMS alerts need `AT_USERNAME`, `AT_API_KEY` and (optionally) `AT_SENDER_ID`. Without `AT_API_KEY` the alerts are saved and logged but not sent, so the system works fully without an account.
 
+## Guides
+
+- [Demo script](docs/DEMO.md): the ten-stage journey for the presentation, with the account to use at each step.
+- [User guide](docs/USER_GUIDE.md): one section per role.
+- [Security check](docs/SECURITY_CHECK.md) and [roadmap](docs/ROADMAP.md).
+
+**Reset the demo data** before a rehearsal: `python manage.py reset_demo --yes`, or sign in as `admin` and choose **Reset demo data** in the menu under your name (this is how to do it on the live site). A scheduled GitHub Action keeps the live site awake on 25 and 26 November.
+
 ## Run the tests
 
 ```bash

@@ -50,11 +50,11 @@ Results: [SECURITY_CHECK.md](SECURITY_CHECK.md).
 
 ## Tue 24 Nov: demo readiness (Must)
 
-- [ ] `reset_demo` command that puts the sample data back to its starting state before each rehearsal and the presentation.
-- [ ] Keep-awake ping: a scheduled GitHub Action that opens the site every 10 minutes on presentation day, so Render's free instance does not sleep.
-- [ ] Final seed data and deploy.
-- [ ] Demo script (`docs/DEMO.md`) following the ten-stage customer journey, with the account to use at each step.
-- [ ] Short user guide, one page per role. *(Should)*
+- [x] `reset_demo` command that puts the sample data back to its starting state before each rehearsal and the presentation.
+- [x] Keep-awake ping: a scheduled GitHub Action that opens the site every 10 minutes on presentation day, so Render's free instance does not sleep.
+- [x] Final seed data and deploy.
+- [x] Demo script (`docs/DEMO.md`) following the ten-stage customer journey, with the account to use at each step.
+- [x] Short user guide, one page per role. *(Should)*
 
 ## Wed 25 Nov: rehearsal and code freeze (Must)
 
