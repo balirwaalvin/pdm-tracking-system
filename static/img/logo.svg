@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PDM Tracking System">
+  <rect width="64" height="64" rx="14" fill="#0b2e6b"/>
+  <rect x="12" y="38" width="9" height="14" rx="2" fill="#f2b705" opacity=".55"/>
+  <rect x="27.5" y="30" width="9" height="22" rx="2" fill="#f2b705" opacity=".8"/>
+  <rect x="43" y="22" width="9" height="30" rx="2" fill="#f2b705"/>
+  <path d="M32 26c0-8 5-13 13-14-1 8-6 13-13 14z" fill="#3fb37f"/>
+  <path d="M32 26c0-6-4-10-10-11 1 6 4 10 10 11z" fill="#2e9a6a"/>
+  <path d="M32 26v4" stroke="#3fb37f" stroke-width="2" stroke-linecap="round"/>
+</svg>
