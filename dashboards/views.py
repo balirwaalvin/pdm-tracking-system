@@ -19,6 +19,21 @@ from . import public, queries, reports, workspace
 DASHBOARD_ROLES = access.roles_for("dashboard")  # from the access policy
 
 
+# The ten stages of the PDM customer journey, for the signed-out landing page.
+JOURNEY = [
+    ("Register", "The Parish Chief profiles the household; the NIN is checked."),
+    ("Verify", "The LC I chairperson confirms the household lives in the village."),
+    ("Group", "The CDO registers the enterprise group and links it to the SACCO."),
+    ("Apply", "The group executive applies for up to UGX 1,000,000."),
+    ("Appraise", "A SACCO official scores the plan and the capacity to repay."),
+    ("Decide", "A second SACCO official approves or rejects, with reasons."),
+    ("Repay", "A schedule at 6% a year; arrears and defaults are flagged."),
+    ("Check", "The household dials USSD and gets SMS alerts and receipts."),
+    ("Speak up", "Complaints escalate if unresolved; verified stories are shared."),
+    ("Oversee", "Dashboards, reports and an audit trail at every level."),
+]
+
+
 class HomeView(TemplateView):
     """A landing page when signed out; when signed in, the user's own workspace.
 
@@ -32,6 +47,7 @@ class HomeView(TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         if not user.is_authenticated:
+            context["journey"] = JOURNEY
             return context
         pages = access.pages_for(user)
         context.update(
