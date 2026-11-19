@@ -111,8 +111,30 @@ class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         if context["can_decide"]:
             context["decision_form"] = DecisionForm()
         context["sms_messages"] = loan.sms_messages.all()
+        context["steps"] = progress_steps(loan)
         context["history"] = LogEntry.objects.get_for_object(loan).select_related("actor").order_by("timestamp")
         return context
+
+
+def progress_steps(loan):
+    """The loan's journey as steps for the progress bar: done, current or still to come."""
+    path = [Status.DRAFT, Status.SUBMITTED, Status.APPRAISED, Status.APPROVED, Status.DISBURSED, Status.REPAYING, Status.CLOSED]
+    labels = {Status.APPROVED: "Approved", Status.DISBURSED: "Paid out", Status.CLOSED: "Repaid"}
+    status = loan.status
+    if status == Status.REJECTED:
+        path = path[:3] + [Status.REJECTED]
+    elif status == Status.DEFAULTED:
+        path = path[:6] + [Status.DEFAULTED]
+    position = path.index(status)
+    steps = []
+    for i, step in enumerate(path):
+        state = "done" if i < position else "current" if i == position else "todo"
+        if step in (Status.REJECTED, Status.DEFAULTED):
+            state = "problem"
+        steps.append({"label": labels.get(step, Status(step).label), "state": state})
+    if status == Status.CLOSED:
+        steps[-1]["state"] = "done"
+    return steps
 
 
 def _get_scoped_loan(request, pk):

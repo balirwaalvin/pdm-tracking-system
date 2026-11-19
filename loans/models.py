@@ -138,6 +138,15 @@ class Appraisal(models.Model):
     appraised_at = models.DateTimeField(auto_now_add=True)
 
     @property
+    def score_rows(self):
+        """(label, score) pairs for display, out of 5 each."""
+        return [
+            ("Business viability", self.viability_score),
+            ("Capacity to repay", self.repayment_score),
+            ("Group’s recommendation", self.group_score),
+        ]
+
+    @property
     def total_score(self):
         return self.viability_score + self.repayment_score + self.group_score
 

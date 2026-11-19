@@ -1,0 +1,8 @@
+<ol class="stepper mb-4" aria-label="Where this loan is">
+  {% for step in steps %}
+    <li class="step {{ step.state }}"{% if step.state == "current" %} aria-current="step"{% endif %}>
+      <span class="dot">{% if step.state == "done" %}<i class="bi bi-check-lg"></i>{% elif step.state == "problem" %}<i class="bi bi-x-lg"></i>{% else %}{{ forloop.counter }}{% endif %}</span>
+      <span class="step-label">{{ step.label }}</span>
+    </li>
+  {% endfor %}
+</ol>

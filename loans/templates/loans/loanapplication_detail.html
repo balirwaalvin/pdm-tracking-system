@@ -11,6 +11,8 @@
   <div>{% include "loans/_status_badge.html" %}</div>
 </div>
 
+{% include "loans/_progress.html" %}
+
 <div class="row g-3">
   <div class="col-lg-7">
     <div class="card shadow-sm mb-3"><div class="card-body">
@@ -27,7 +29,11 @@
       <h2 class="h6 text-uppercase text-muted">Appraisal</h2>
       {% if appraisal %}
         <p class="mb-1">Score <strong>{{ appraisal.total_score }} / 15</strong> · recommends <strong>{{ appraisal.get_recommendation_display|lower }}</strong></p>
-        <ul class="small mb-2"><li>Business viability: {{ appraisal.viability_score }}</li><li>Capacity to repay: {{ appraisal.repayment_score }}</li><li>Group’s recommendation: {{ appraisal.group_score }}</li></ul>
+        <div class="score-bars mb-2">
+          {% for label, score in appraisal.score_rows %}
+            <div class="score-row"><span>{{ label }}</span><span class="score-track"><span class="score-fill" style="width: {% widthratio score 5 100 %}%"></span></span><strong>{{ score }}</strong></div>
+          {% endfor %}
+        </div>
         <p class="mb-1"><strong>Reasons:</strong> {{ appraisal.reasons|linebreaksbr }}</p>
         <p class="small text-muted mb-0">By {{ appraisal.appraised_by }} on {{ appraisal.appraised_at|date:"j M Y, H:i" }}</p>
       {% elif can_appraise %}
@@ -36,7 +42,7 @@
         <p class="text-muted mb-0">Not appraised yet.</p>
       {% endif %}
       {% if loan.decided_by %}
-        <hr><p class="mb-1"><strong>Decision:</strong> {{ loan.get_status_display }} by {{ loan.decided_by }} on {{ loan.decided_at|date:"j M Y" }}</p>
+        <hr><p class="mb-1"><strong>Decision:</strong> {% if loan.status == "rejected" %}<span class="badge text-bg-danger">Rejected</span>{% else %}<span class="badge text-bg-success">Approved</span>{% endif %} by {{ loan.decided_by|default:"the SACCO Board" }} on {{ loan.decided_at|date:"j M Y" }}</p>
         {% if loan.decision_reason %}<p class="mb-0">{{ loan.decision_reason|linebreaksbr }}</p>{% endif %}
       {% endif %}
       {% if appraised_by_me %}
@@ -69,6 +75,10 @@
         <h2 class="h6 text-uppercase text-muted">Repayment schedule</h2>
         {% if can_repay %}<a class="btn btn-sm btn-pdm" href="{% url 'loans:loan_repay' loan.pk %}">Record repayment</a>{% endif %}
       </div>
+      <div class="repay-bar my-2" role="img" aria-label="Repaid {% widthratio loan.total_repaid loan.total_due 100 %} percent">
+        <span style="width: {% widthratio loan.total_repaid loan.total_due 100 %}%"></span>
+      </div>
+      <p class="small text-muted mb-2">{% widthratio loan.total_repaid loan.total_due 100 %}% repaid</p>
       <p class="small mb-2">6% a year, flat, over {{ loan.term_months }} months. Total due UGX <strong>{{ loan.total_due|intcomma }}</strong> · repaid UGX <strong>{{ loan.total_repaid|intcomma }}</strong> · balance UGX <strong>{{ loan.balance|intcomma }}</strong>
         {% with arrears=loan.arrears %}{% if arrears %}<br><span class="text-danger">In arrears: UGX {{ arrears|intcomma }}, {{ loan.days_in_arrears }} days overdue</span>{% endif %}{% endwith %}</p>
       <div class="table-responsive"><table class="table table-sm small mb-0">
