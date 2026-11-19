@@ -1,6 +1,8 @@
 """The USSD callback that Africa's Talking calls, and an in-browser simulator for demonstrations."""
 
-from django.http import HttpResponse
+from django.conf import settings
+from django.http import HttpResponse, HttpResponseForbidden
+from django.utils.crypto import constant_time_compare
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
@@ -18,7 +20,14 @@ SIMULATOR_ROLES = access.roles_for("ussd_simulator")  # from the access policy
 @csrf_exempt
 @require_POST
 def callback(request):
-    """Africa's Talking posts sessionId, serviceCode, phoneNumber and text; we reply in plain text."""
+    """Africa's Talking posts sessionId, serviceCode, phoneNumber and text; we reply in plain text.
+
+    If USSD_CALLBACK_TOKEN is set, the callback address must carry ?token=<it>, so strangers
+    cannot read a household's status by posting its phone number.
+    """
+    expected = settings.USSD_CALLBACK_TOKEN
+    if expected and not constant_time_compare(request.GET.get("token", ""), expected):
+        return HttpResponseForbidden("END Not allowed.", content_type="text/plain")
     reply = respond(request.POST.get("phoneNumber", ""), request.POST.get("text", ""))
     return HttpResponse(reply, content_type="text/plain")
 
