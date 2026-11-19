@@ -185,8 +185,16 @@ class EnterpriseGroupCreateView(RoleRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
+        """Register the group and link it to its parish's PDM SACCO, so members can apply for loans."""
         form.instance.registered_by = self.request.user
-        messages.success(self.request, "Enterprise group registered.")
+        sacco = getattr(form.cleaned_data["parish"], "sacco", None)
+        form.instance.sacco = sacco
+        if sacco is None:
+            messages.warning(self.request, "Enterprise group registered, but its parish has no PDM SACCO yet, so members cannot apply for loans.")
+        elif not sacco.is_eligible:
+            messages.warning(self.request, f"Enterprise group registered and linked to {sacco.name}, which has not yet met every requirement to receive the fund.")
+        else:
+            messages.success(self.request, f"Enterprise group registered and linked to {sacco.name}.")
         return super().form_valid(form)
 
     def get_success_url(self):
