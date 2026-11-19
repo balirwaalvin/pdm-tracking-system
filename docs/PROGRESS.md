@@ -71,3 +71,4 @@ Day 1 was Tue 17 Nov 2026; Day 10 is Thu 26 Nov 2026; the buffer runs to Mon 30 
 - [x] In-browser USSD simulator for demonstrations, scoped to the official's area (we use it instead of the Africa's Talking sandbox for now).
 - [x] SMS alerts listed on each loan page and in the Django admin.
 - [x] Role-based access revamp: one access policy (`accounts/access.py`) drives every view, the menu and each user's home page; each role gets its own workspace with the work waiting for it; households log in to see only their own record; a test checks the full role-by-page matrix.
+- [x] Visual redesign: a design system (Inter and Plus Jakarta Sans, PDM navy, gold and green), a logo, an icon sidebar built from the access policy, a split-screen sign-in with demo accounts, a landing page showing the ten-stage journey, icon KPIs, a loan progress stepper and appraisal score bars.

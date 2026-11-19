@@ -12,6 +12,8 @@ Under active development: a functional prototype within 10 days. See [docs/PROGR
 
 ## Features so far
 
+- **Look and feel:** a consistent design system (`static/css/app.css`) with a logo, an icon sidebar that shows only the user's own pages, a sign-in page with the demo accounts, and visual progress for each loan.
+
 - **Registry:** the Parish Chief profiles households (NIN checked, wealth rank recorded); the LC I chairperson verifies or rejects them, with a reason for every rejection.
 - **Enterprise groups:** the sub-county CDO registers groups and links them to the parish PDM SACCO.
 - **SACCOs:** a seven-point eligibility checklist; the national office records fund releases and the district confirms them.
