@@ -3,44 +3,47 @@
 {% block title %}{{ parish.name }} parish · PDM Tracking System{% endblock %}
 {% block content %}
 <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'public_parishes' %}">Parish pages</a></li><li class="breadcrumb-item active">{{ parish.name }}</li></ol></nav>
-<div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
-  <div>
-    <p class="text-crimson fw-bold text-uppercase small mb-1">Public parish page</p>
-    <h1 class="h3 mb-0">{{ parish.name }} parish</h1>
-    <p class="text-muted mb-0">{{ parish.parent.name }} sub-county · {{ parish.parent.parent.name }} district</p>
+<section class="hero p-4 p-md-5 mb-4">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
+    <div>
+      <p class="page-eyebrow mb-1">Public parish page · no sign-in needed</p>
+      <h1 class="display-6 fw-bold mb-1 text-white">{{ parish.name }} parish</h1>
+      <p class="lead mb-0">{{ parish.parent.name }} sub-county · {{ parish.parent.parent.name }} district</p>
+    </div>
+    <a class="btn btn-gold" href="{% url 'public_parish_data' parish.pk %}"><i class="bi bi-download me-1"></i>Download the figures (CSV)</a>
   </div>
-  <a class="btn btn-outline-secondary btn-sm" href="{% url 'public_parish_data' parish.pk %}">Download the figures (CSV)</a>
-</div>
+</section>
 
 {% with f=figures %}
 <div class="row g-3 mb-4">
-  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="small text-muted">Households profiled</div><div class="h3 mb-0">{{ f.households }}</div>
-    <div class="small text-muted">{{ f.verified }} verified by their LC I</div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100 kpi"><div class="card-body d-flex gap-3">
+    <div class="icon-tile navy"><i class="bi bi-people"></i></div>
+    <div><div class="kpi-label">Households profiled</div><div class="kpi-value">{{ f.households }}</div><div class="kpi-note">{{ f.verified }} verified by their LC I</div></div>
   </div></div></div>
-  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="small text-muted">Loans paid out</div><div class="h3 mb-0">{{ f.loans_paid_out }}</div>
-    <div class="small text-muted">UGX {{ f.amount_paid_out|intcomma }} in total</div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100 kpi"><div class="card-body d-flex gap-3">
+    <div class="icon-tile gold"><i class="bi bi-cash-coin"></i></div>
+    <div><div class="kpi-label">Loans paid out</div><div class="kpi-value">{{ f.loans_paid_out }}</div><div class="kpi-note">UGX {{ f.amount_paid_out|intcomma }} in total</div></div>
   </div></div></div>
-  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="small text-muted">Repaid on time</div><div class="h3 mb-0">{% if f.repayment_rate is not None %}{{ f.repayment_rate }}%{% else %}-{% endif %}</div>
-    <div class="small text-muted">of instalments due so far · UGX {{ f.amount_repaid|intcomma }} repaid</div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100 kpi"><div class="card-body d-flex gap-3">
+    <div class="icon-tile green"><i class="bi bi-graph-up-arrow"></i></div>
+    <div><div class="kpi-label">Repaid on time</div><div class="kpi-value">{% if f.repayment_rate is not None %}{{ f.repayment_rate }}%{% else %}-{% endif %}</div><div class="kpi-note">of instalments due so far · UGX {{ f.amount_repaid|intcomma }} repaid</div></div>
   </div></div></div>
-  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="small text-muted">Complaints</div><div class="h3 mb-0">{{ f.complaints_resolved }} / {{ f.complaints }}</div>
-    <div class="small text-muted">resolved</div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100 kpi"><div class="card-body d-flex gap-3">
+    <div class="icon-tile crimson"><i class="bi bi-megaphone"></i></div>
+    <div><div class="kpi-label">Complaints resolved</div><div class="kpi-value">{{ f.complaints_resolved }} / {{ f.complaints }}</div><div class="kpi-note">Unresolved ones move up after 7 days</div></div>
   </div></div></div>
 </div>
-<div class="card shadow-sm mb-4"><div class="card-body small">
+<div class="card shadow-sm mb-4"><div class="card-body small d-flex gap-3"><div class="icon-tile navy"><i class="bi bi-people-fill"></i></div><div>
   <strong>Who is included:</strong> {{ f.women }} women-headed households · {{ f.youth }} youth-headed · {{ f.disability }} with a person with a disability · {{ f.groups }} enterprise group{{ f.groups|pluralize }}.
   {% if f.sacco_name %}<br><strong>{{ f.sacco_name }}:</strong> {% if f.sacco_eligible %}meets all requirements to receive the Parish Revolving Fund.{% else %}does not yet meet all requirements to receive the Parish Revolving Fund.{% endif %}{% endif %}
-</div></div>
+</div></div></div>
 {% endwith %}
 
-<h2 class="h5 mb-3">Success stories</h2>
+<h2 class="h5 mb-3"><i class="bi bi-stars text-warning me-1"></i>Success stories</h2>
 <div class="row g-3">
   {% for story in stories %}
-  <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+  <div class="col-lg-6"><div class="card shadow-sm h-100 story-card"><div class="card-body">
+    <span class="badge text-bg-success mb-2"><i class="bi bi-patch-check me-1"></i>Checked by the PDC</span>
     <h3 class="h5">{{ story.title }}</h3>
     <p>{{ story.story|linebreaksbr }}</p>
     <p class="small text-muted mb-0">{{ story.public_name }} · checked by the Parish Development Committee on {{ story.checked_at|date:"j M Y" }}</p>

@@ -4,31 +4,35 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
   <div>
-    <p class="text-crimson fw-bold text-uppercase small mb-1">PDM dashboard</p>
+    <p class="page-eyebrow mb-1">PDM dashboard</p>
     <h1 class="h3 mb-0">{{ area_name }}</h1>
   </div>
-  <p class="small text-muted mb-0">Live figures from the shared record · sample data only</p>
+  <div class="d-flex gap-2 align-items-center">{% if access.quarterly_report %}<a class="btn btn-outline-secondary btn-sm" href="{% url 'quarterly_report' %}"><i class="bi bi-file-earmark-bar-graph me-1"></i>Quarterly report</a>{% endif %}<span class="badge text-bg-success"><i class="bi bi-broadcast me-1"></i>Live figures · sample data</span></div>
 </div>
 
 <div class="row g-3 mb-3">
   {% with h=summary.households %}
-  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="small text-muted">Households profiled</div><div class="h3 mb-0">{{ h.total|intcomma }}</div>
-    <div class="small text-muted">{{ h.verified }} verified · {{ h.pending }} waiting</div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100 kpi"><div class="card-body d-flex gap-3">
+    <div class="icon-tile navy"><i class="bi bi-people"></i></div>
+    <div><div class="kpi-label">Households profiled</div><div class="kpi-value">{{ h.total|intcomma }}</div>
+    <div class="kpi-note">{{ h.verified }} verified · {{ h.pending }} waiting</div></div>
   </div></div></div>
-  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="small text-muted">Groups and SACCOs</div><div class="h3 mb-0">{{ summary.groups }} · {{ summary.saccos }}</div>
-    <div class="small text-muted">{{ summary.eligible_saccos }} of {{ summary.saccos }} SACCOs eligible</div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100 kpi"><div class="card-body d-flex gap-3">
+    <div class="icon-tile green"><i class="bi bi-bank"></i></div>
+    <div><div class="kpi-label">Groups · SACCOs</div><div class="kpi-value">{{ summary.groups }} · {{ summary.saccos }}</div>
+    <div class="kpi-note">{{ summary.eligible_saccos }} of {{ summary.saccos }} SACCOs eligible</div></div>
   </div></div></div>
   {% endwith %}
   {% with m=summary.money %}
-  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="small text-muted">Paid out to households (UGX)</div><div class="h3 mb-0">{{ m.disbursed|intcomma }}</div>
-    <div class="small text-muted">of {{ summary.released|intcomma }} released · {{ m.repaid|intcomma }} repaid</div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100 kpi"><div class="card-body d-flex gap-3">
+    <div class="icon-tile gold"><i class="bi bi-cash-coin"></i></div>
+    <div><div class="kpi-label">Paid out (UGX)</div><div class="kpi-value">{{ m.disbursed|intcomma }}</div>
+    <div class="kpi-note">of {{ summary.released|intcomma }} released · {{ m.repaid|intcomma }} repaid</div></div>
   </div></div></div>
-  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="small text-muted">In arrears (UGX)</div><div class="h3 mb-0 {% if m.arrears %}text-danger{% endif %}">{{ m.arrears|intcomma }}</div>
-    <div class="small text-muted">Portfolio at risk: {{ m.portfolio_at_risk }}% of {{ m.outstanding|intcomma }} owed</div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100 kpi"><div class="card-body d-flex gap-3">
+    <div class="icon-tile crimson"><i class="bi bi-exclamation-triangle"></i></div>
+    <div><div class="kpi-label">In arrears (UGX)</div><div class="kpi-value" {% if m.arrears %}style="color: var(--pdm-crimson)"{% endif %}>{{ m.arrears|intcomma }}</div>
+    <div class="kpi-note">Portfolio at risk {{ m.portfolio_at_risk }}% of {{ m.outstanding|intcomma }} owed</div></div>
   </div></div></div>
   {% endwith %}
 </div>
@@ -74,15 +78,22 @@
   const navy = "#0b2e6b", gold = "#f2b705", crimson = "#cc0a5a", green = "#2e7d32", grey = "#9aa5b1";
   const palette = [grey, "#0c549c", navy, "#00897b", crimson, gold, green, "#6d4c41", "#000000"];
   const money = (v) => "UGX " + Number(v).toLocaleString("en-GB");
+  Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+  Chart.defaults.color = "#5d6b85";
+  Chart.defaults.borderColor = "#e3e8f1";
+  Chart.defaults.elements.arc.borderWidth = 2;
+  Chart.defaults.elements.arc.borderColor = "#ffffff";
+  Chart.defaults.elements.bar.borderRadius = 6;
+  Chart.defaults.plugins.legend.labels.usePointStyle = true;
   new Chart(document.getElementById("statusChart"), {
     type: "doughnut",
     data: { labels: data.status_labels, datasets: [{ data: data.status_counts, backgroundColor: palette }] },
-    options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } } } },
+    options: { cutout: "62%", plugins: { legend: { position: "bottom", labels: { boxWidth: 10 } } } },
   });
   new Chart(document.getElementById("verificationChart"), {
     type: "doughnut",
     data: { labels: ["Verified", "Waiting for LC I", "Rejected"], datasets: [{ data: data.verification, backgroundColor: [green, gold, crimson] }] },
-    options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } } } },
+    options: { cutout: "62%", plugins: { legend: { position: "bottom", labels: { boxWidth: 10 } } } },
   });
   new Chart(document.getElementById("moneyChart"), {
     type: "bar",
