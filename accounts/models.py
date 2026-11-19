@@ -66,4 +66,5 @@ class SignInEvent(models.Model):
 from auditlog.registry import auditlog  # noqa: E402
 
 auditlog.register(User, exclude_fields=["password", "last_login"])
-auditlog.register(SignInEvent)
+# SignInEvent is not registered: it is an audit record itself (see the sign-in log), and
+# logging it again would bury real changes in the audit log.
