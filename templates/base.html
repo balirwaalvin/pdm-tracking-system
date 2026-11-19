@@ -39,6 +39,7 @@
               <li><span class="dropdown-item-text small text-muted">{{ user.role|default:"Administrator" }}{% if user.admin_unit %} · {{ user.admin_unit.name }}{% endif %}</span></li>
               <li><a class="dropdown-item" href="{% url 'home' %}"><i class="bi bi-grid me-2"></i>My workspace</a></li>
               <li><a class="dropdown-item" href="{% url 'password_change' %}"><i class="bi bi-key me-2"></i>Change password</a></li>
+              {% if user.is_superuser %}<li><a class="dropdown-item" href="{% url 'reset_demo' %}"><i class="bi bi-arrow-counterclockwise me-2"></i>Reset demo data</a></li>{% endif %}
               <li><hr class="dropdown-divider"></li>
               <li>
                 <form method="post" action="{% url 'logout' %}">{% csrf_token %}

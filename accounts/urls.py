@@ -18,4 +18,5 @@ urlpatterns = [
     ),
     path("password/done/", auth_views.PasswordChangeDoneView.as_view(), name="password_change_done"),
     path("sign-ins/", views.SignInLogView.as_view(), name="sign_in_log"),
+    path("reset-demo/", views.ResetDemoView.as_view(), name="reset_demo"),
 ]
