@@ -240,7 +240,18 @@ class Command(BaseCommand):
                 "confirmed_at": now,
             },
         )
-        self.stdout.write(f"  {Sacco.objects.count()} SACCOs with checklists and a fund release")
+        # A second release, recorded by the national office but not yet confirmed: the district's demo step.
+        FundRelease.objects.get_or_create(
+            sacco=seeta,
+            financial_year="2026/27",
+            defaults={
+                "amount": 50_000_000,
+                "release_date": timezone.localdate() - datetime.timedelta(days=3),
+                "reference": "SAMPLE-REL-0003",
+                "recorded_by": national,
+            },
+        )
+        self.stdout.write(f"  {Sacco.objects.count()} SACCOs with checklists and fund releases")
 
     def create_loans(self):
         groupexec = User.objects.get(username="groupexec")
