@@ -21,8 +21,17 @@ Status = LoanApplication.Status
 Verification = Household.Verification
 
 
+# A to-do item's icon follows the page it opens.
+_ICON_BY_PATH = [
+    ("/loans/arrears", "exclamation-triangle"), ("/loans", "cash-coin"), ("/registry/households", "people"),
+    ("/registry/groups", "diagram-3"), ("/saccos", "bank"), ("/complaints/stories", "stars"),
+    ("/complaints", "megaphone"), ("/audit", "shield-check"), ("/accounts/sign-ins", "key"),
+]
+
+
 def _item(label, count, url, hint=""):
-    return {"label": label, "count": count, "url": url, "hint": hint, "urgent": count > 0}
+    icon = next((name for prefix, name in _ICON_BY_PATH if url.startswith(prefix)), "check2-square")
+    return {"label": label, "count": count, "url": url, "hint": hint, "urgent": count > 0, "icon": icon}
 
 
 def _households(user):

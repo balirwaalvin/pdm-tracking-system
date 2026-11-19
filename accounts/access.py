@@ -22,6 +22,11 @@ class Feature:
     roles: tuple
     description: str
 
+    @property
+    def icon(self):
+        """Bootstrap Icons name for the menu and home page."""
+        return ICONS.get(self.key, "circle")
+
 
 # Pages a role can open. Order is the order of the menu.
 PAGES = [
@@ -96,6 +101,17 @@ ACTIONS = [
     Feature("confirm_release", "Confirm fund releases", "", (r.DISTRICT_OFFICIAL,),
             "Confirm that released funds reached the SACCO's account."),
 ]
+
+# Icons (https://icons.getbootstrap.com) for each page and action.
+ICONS = {
+    "my_household": "house-heart", "dashboard": "speedometer2", "households": "people", "groups": "diagram-3",
+    "saccos": "bank", "loans": "cash-coin", "arrears": "exclamation-triangle", "quarterly_report": "file-earmark-bar-graph",
+    "complaints": "megaphone", "stories": "stars", "ussd_simulator": "phone", "audit_log": "shield-check",
+    "sign_in_log": "key", "register_household": "person-plus", "verify_household": "patch-check",
+    "register_group": "people-fill", "apply_loan": "file-earmark-plus", "tick_checklist": "list-check",
+    "appraise_loan": "clipboard-check", "raise_complaint": "chat-left-text", "respond_complaint": "reply",
+    "draft_story": "pencil-square", "check_story": "check2-circle", "record_release": "send", "confirm_release": "check2-all",
+}
 
 _ALL = {feature.key: feature for feature in PAGES + ACTIONS}
 
