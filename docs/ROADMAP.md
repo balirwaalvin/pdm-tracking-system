@@ -42,9 +42,11 @@ Use it for whatever slipped. Otherwise:
 
 ## Mon 23 Nov: walkthrough and security (Must)
 
-- [ ] Walk through the system as each of the ten roles, following the customer journey.
-- [ ] Security check: logged-out access, cross-parish access, wrong-role posts, CSRF on every form, and production settings (`DEBUG=False`, secure cookies, HTTPS redirect).
-- [ ] Fix the bugs found.
+Results: [SECURITY_CHECK.md](SECURITY_CHECK.md).
+
+- [x] Walk through the system as each of the ten roles, following the customer journey.
+- [x] Security check: logged-out access, cross-parish access, wrong-role posts, CSRF on every form, and production settings (`DEBUG=False`, secure cookies, HTTPS redirect).
+- [x] Fix the bugs found.
 
 ## Tue 24 Nov: demo readiness (Must)
 
