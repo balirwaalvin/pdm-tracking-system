@@ -6,7 +6,7 @@ Live site: **https://pdm.treez.tech** · every password is **`pdm12345`** (also 
 
 ## Before you start (15 minutes before)
 
-1. Sign in as **`admin`**, open the user menu (top right) → **Reset demo data**, type `RESET`. This puts every record back to the starting state below, with loan and complaint numbers starting at 1.
+1. Sign in as **`admin`**, open the user menu (top right) → **Reset demo data**, type `RESET`. On the live site this takes 30 to 40 seconds; wait for the green message and do not click twice. It puts every record back to the starting state below, with loan and complaint numbers starting at 1.
 2. Sign out. The keep-awake ping keeps the site warm on 25 and 26 Nov; if it was asleep, the first page takes about 50 seconds, so do this early.
 3. Use a private (incognito) window for the demo, so you can sign out and in quickly. Zoom the browser to 110–125% for the projector.
 4. Have the local copy ready as a fallback (`python manage.py runserver`, then http://127.0.0.1:8000).
@@ -90,6 +90,11 @@ If a password is mistyped five times, that account locks for 15 minutes. Use ano
 ### Closing (30 s)
 
 - Back on any workspace: *each of the ten roles sees only its own work in its own area; 264 automated tests check this on every change.*
+
+## Rehearsal record
+
+- **Mon 23 Nov 2026, live site:** the whole script was run in a browser on https://pdm.treez.tech, from a reset, every step clicked as written above. All ten stages passed. Pages answered in 1 to 2 seconds; a reset took about 35 seconds; the first visit after a sleep took about 33 seconds. The demo was reset again afterwards. Screenshots: [screenshots/](screenshots/).
+- The same script also runs as an automated test (`dashboards/test_demo_script.py`) on every push.
 
 ## Likely questions
 

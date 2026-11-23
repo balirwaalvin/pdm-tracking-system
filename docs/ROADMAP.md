@@ -58,8 +58,8 @@ Results: [SECURITY_CHECK.md](SECURITY_CHECK.md).
 
 ## Wed 25 Nov: rehearsal and code freeze (Must)
 
-- [ ] Full rehearsal on the live site, timed.
-- [ ] Update the project report and take screenshots for the slides.
+- [x] Full rehearsal on the live site, timed (see the rehearsal record in DEMO.md).
+- [x] Update the project report and take screenshots for the slides ([screenshots/](screenshots/)).
 - [ ] Code freeze at 18:00. After that, only fixes for something broken in the demo.
 
 ## Thu 26 Nov: presentation
