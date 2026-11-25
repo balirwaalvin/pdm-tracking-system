@@ -2,17 +2,17 @@
 
 **Course:** MGT3151 E-Business, E-Commerce and E-Governance · **Lecturer:** Madam Brenda Lamwaka
 **Institution:** Uganda Christian University, Faculty of Engineering, Design and Technology
-**Group:** ______ (ten members, listed in Appendix B) · **Date:** ______ Nov 2026
+**Group:** ten members (Appendix B): Nalweyiso Samalie Ruth, Balirwa Alvin Daniel, Kaitesi Lillian, Kabeho Samantha, Ssuubi Stephen, Kato Sharif Achen, Riak James Ngong, Kutosi Pius, Ogenrwot Churchill, Okello Emmanuel · **Date:** ______ Nov 2026
 
 **Live prototype:** https://pdm-tracking-system.onrender.com · **Repository:** https://github.com/balirwaalvin/pdm-tracking-system (access given to the lecturer on request)
 
-> **Draft.** Sections marked **[verify]** contain figures written from memory that must be checked against the cited source before submission. Each section has an owner: replace the blanks with the groupmate who wrote and checked it.
+> **Draft.** Sections marked **[verify]** contain figures written from memory that must be checked against the cited source before submission. Each section names its owner, who checks it and must be able to defend it.
 
 ---
 
 ## Executive summary
 
-*Owner: ______*
+*Owner: Okello Emmanuel*
 
 The Parish Development Model (PDM) channels the Parish Revolving Fund to households through parish PDM SACCOs. Today most of the cycle — profiling, verification, applications, decisions, repayment and complaints — runs on paper registers and phone calls, so households cannot see where their application is, officials cannot see arrears early, and oversight bodies receive late, unverifiable reports.
 
@@ -22,7 +22,7 @@ The prototype runs live with fictitious data, passes **291 automated tests**, an
 
 ## 1. Problem analysis (Phase 1)
 
-*Owner: ______* · Full detail: [design/01](../design/01-problem-and-stakeholders.md), [02](../design/02-process-models.md), [03](../design/03-feasibility-and-scope.md)
+*Owner: Kaitesi Lillian (01, 02) and Kabeho Samantha (03)* · Full detail: [design/01](../design/01-problem-and-stakeholders.md), [02](../design/02-process-models.md), [03](../design/03-feasibility-and-scope.md)
 
 - **Context.** PDM is Uganda's main programme for moving subsistence households into the money economy, with about UGX 100 million a year for each parish's revolving fund **[verify: MoFPED 2022]**.
 - **Problem.** Paper-based processing gives long and invisible waiting times, ghost or ineligible beneficiaries, unrecorded refusals, late repayment follow-up and complaints that never reach anyone with authority.
@@ -32,7 +32,7 @@ The prototype runs live with fictitious data, passes **291 automated tests**, an
 
 ## 2. Service design and model (Phase 2)
 
-*Owner: ______* · Full detail: [design/04](../design/04-journey-map.md), [05](../design/05-service-model.md), [06](../design/06-personas-and-traceability.md)
+*Owner: Kabeho Samantha, Nalweyiso Samalie Ruth and Kutosi Pius* · Full detail: [design/04](../design/04-journey-map.md), [05](../design/05-service-model.md), [06](../design/06-personas-and-traceability.md)
 
 - **Journey map.** Ten stages (register → oversee) with pain points, emotions and exceptions such as rejection, appeal, arrears and complaints.
 - **Service model.** G2C (household status, complaints, appeals), G2B (SACCOs and enterprise groups) and G2G (parish → national reporting and fund releases), with a public-value canvas. It is funded by government and free to households.
@@ -42,7 +42,7 @@ The prototype runs live with fictitious data, passes **291 automated tests**, an
 
 ## 3. Prototype (Phase 3)
 
-*Owner: ______* · Demo script: [DEMO.md](../DEMO.md) · Screenshots: [screenshots](../screenshots/README.md) · Tests: [design/07](../design/07-test-cases.md), [08](../design/08-usability-and-accessibility.md)
+*Owner: Riak James Ngong and Ssuubi Stephen (demo: Balirwa Alvin Daniel)* · Demo script: [DEMO.md](../DEMO.md) · Screenshots: [screenshots](../screenshots/README.md) · Tests: [design/07](../design/07-test-cases.md), [08](../design/08-usability-and-accessibility.md)
 
 **Workflow implemented end to end:** check eligibility → register (Parish Chief, with a mock national ID check) → verify (LC I) → group (CDO) → apply (group executive) → appraise (SACCO) → decide (a second SACCO official, maker-checker) → disburse → repay (6% flat schedule, receipts, arrears, 90-day default) → check status (USSD, SMS) → complain or appeal (escalation after 7 days; appeal decided by the sub-county) → publish verified success stories → dashboards, quarterly report and audit trail.
 
@@ -57,7 +57,7 @@ The prototype runs live with fictitious data, passes **291 automated tests**, an
 
 ## 4. Architecture, data and security (Phase 4)
 
-*Owner: ______* · Full detail: [design/09](../design/09-architecture.md), [10](../design/10-data-design.md), [11](../design/11-security-privacy-continuity.md)
+*Owner: Ogenrwot Churchill and Kato Sharif Achen* · Full detail: [design/09](../design/09-architecture.md), [10](../design/10-data-design.md), [11](../design/11-security-privacy-continuity.md)
 
 - **Architecture.** Web, USSD and SMS channels → a Django application with seven modules → PostgreSQL, on Render, with CI in GitHub Actions. Four trust boundaries are described in design/09.
 - **Data.** An ERD of 17 entities with cardinalities; the NIN and phone number are unique; validation rules are listed; data is minimised (no photos, GPS or bank details); a retention proposal is given.
@@ -66,7 +66,7 @@ The prototype runs live with fictitious data, passes **291 automated tests**, an
 
 ## 5. Evaluation and lessons
 
-*Owner: ______*
+*Owner: Okello Emmanuel*
 
 | What worked | What we would change |
 | --- | --- |
@@ -83,7 +83,7 @@ Follow the [README](../../README.md): clone, copy `.env.example` to `.env`, then
 
 ## References
 
-*Owner: ______. Check every entry, add access dates, and use one style (APA 7th) throughout.*
+*Owner: Okello Emmanuel. Check every entry, add access dates, and use one style (APA 7th) throughout.*
 
 1. Ministry of Finance, Planning and Economic Development. (2022). *Parish Development Model: Implementation guidelines*. Kampala: MoFPED. **[verify title and year]**
 2. Ministry of Finance, Planning and Economic Development. (2022). *Parish Revolving Fund operational guidelines*. **[verify]**
