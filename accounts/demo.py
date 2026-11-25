@@ -15,7 +15,7 @@ from django.core.management import call_command
 from django.core.management.color import no_style
 from django.db import connection, transaction
 
-from feedback.models import Complaint, ComplaintResponse, SuccessStory
+from feedback.models import Appeal, Complaint, ComplaintResponse, SuccessStory
 from loans.models import Appraisal, Disbursement, LoanApplication, Repayment
 from registry.models import EnterpriseGroup, Household
 from saccos.models import FundRelease, Sacco, SaccoChecklistItem
@@ -25,7 +25,7 @@ from .models import SignInEvent
 
 # Children before parents, so protected foreign keys never block a delete.
 RESET_ORDER = [
-    SmsMessage, ComplaintResponse, Complaint, SuccessStory, Repayment, Disbursement, Appraisal,
+    SmsMessage, Appeal, ComplaintResponse, Complaint, SuccessStory, Repayment, Disbursement, Appraisal,
     LoanApplication, Household, EnterpriseGroup, FundRelease, SaccoChecklistItem, Sacco, SignInEvent,
 ]
 
