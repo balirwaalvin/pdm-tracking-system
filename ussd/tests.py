@@ -247,9 +247,25 @@ class SimulatorTests(TestCase):
         self.assertContains(response, "Choose a household in your area")
         self.assertNotContains(response, "Overdue")
 
-    def test_household_role_cannot_open_the_simulator(self):
+    def test_household_dials_with_its_own_number(self):
+        self.login("household")  # Grace
+        response = self.client.get(reverse("ussd:simulator"))
+        self.assertContains(response, "PDM on your phone")
+        self.assertContains(response, "+256700000001")
+        self.assertNotContains(response, "Isaac Mugisha")  # a neighbour in the same village
+        response = self.client.post(reverse("ussd:simulator"), {"phone": "256700000001", "action": "dial"})
+        self.assertContains(response, "Grace Nakato")
+        response = self.client.post(
+            reverse("ussd:simulator"), {"phone": "256700000001", "session_text": "", "answer": "2", "action": "send"}
+        )
+        self.assertContains(response, "UGX 800,000")
+
+    def test_household_cannot_dial_as_a_neighbour(self):
         self.login("household")
-        self.assertEqual(self.client.get(reverse("ussd:simulator")).status_code, 403)
+        response = self.client.post(reverse("ussd:simulator"), {"phone": "256700000011", "action": "dial"})  # Isaac
+        self.assertContains(response, "You can only dial with your own number.")
+        self.assertNotContains(response, "Isaac Mugisha")
+        self.assertNotContains(response, "UGX 500,000")
 
     def test_logged_out_users_are_sent_to_login(self):
         response = self.client.get(reverse("ussd:simulator"))

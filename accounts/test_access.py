@@ -68,7 +68,9 @@ class AccessMatrixTests(TestCase):
         self.assertFalse(access.allows(User.objects.get(username="national"), "households"))
         # Only the auditor reads the audit log; the household sees only its own page.
         self.assertEqual([u for u in USERS if access.allows(User.objects.get(username=u), "audit_log")], ["auditor"])
-        self.assertEqual([p.key for p in access.pages_for(User.objects.get(username="household"))], ["my_household"])
+        self.assertEqual(
+            [p.key for p in access.pages_for(User.objects.get(username="household"))], ["my_household", "ussd_simulator"]
+        )
 
 
 class WorkspaceTests(TestCase):

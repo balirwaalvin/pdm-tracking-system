@@ -91,7 +91,11 @@ class DemoScriptTest(TestCase):
         self.assertEqual(loan.schedule_with_status()[0]["state"], "paid")
         self.assertContains(self.client.get(reverse("loans:arrears_list")), "Henry Mubiru")
 
-        # 8. USSD as Florence: loan, Luganda, and a bribery report
+        # 8. The household's own USSD (Grace, own number only), then the help desk as Florence
+        self.as_("household")
+        sim = reverse("ussd:simulator")
+        self.assertContains(self.client.post(sim, {"phone": "256700000001", "session_text": "", "answer": "2", "action": "send"}), "UGX 800,000")
+        self.assertContains(self.client.post(sim, {"phone": florence.phone, "action": "dial"}), "only dial with your own number")
         self.as_("parishchief")
         sim = reverse("ussd:simulator")
         self.client.post(sim, {"phone": florence.phone, "action": "dial"})
