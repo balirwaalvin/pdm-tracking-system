@@ -20,7 +20,7 @@ You are continuing development of the **PDM Tracking System** (Parish Developmen
 ## 3. Repository, deploy and environment
 
 - **Repo:** https://github.com/balirwaalvin/pdm-tracking-system (private). It has 84 commits so far, and the branch is `main`.
-- **Live site:** https://pdm-tracking-system.onrender.com, on Render's free tier.
+- **Live site:** https://pdm.treez.tech (custom domain; https://pdm-tracking-system.onrender.com also works), on Render's free tier.
   - Render deploys from `render.yaml` as a Blueprint: one web service, `pdm-tracking-system`, and one free PostgreSQL database, `pdm-tracker-db`.
   - `build.sh` runs `pip install`, `collectstatic`, `migrate` and `seed_demo` on every deploy.
   - **Every push to `main` redeploys automatically.**

@@ -4,7 +4,7 @@
 **Institution:** Uganda Christian University, Faculty of Engineering, Design and Technology
 **Group:** ten members (Appendix B): Nalweyiso Samalie Ruth, Balirwa Alvin Daniel, Kaitesi Lillian, Kabeho Samantha, Ssuubi Stephen, Kato Sharif Achen, Riak James Ngong, Kutosi Pius, Ogenrwot Churchill, Okello Emmanuel · **Date:** ______ Nov 2026
 
-**Live prototype:** https://pdm-tracking-system.onrender.com · **Repository:** https://github.com/balirwaalvin/pdm-tracking-system (access given to the lecturer on request)
+**Live prototype:** https://pdm.treez.tech · **Repository:** https://github.com/balirwaalvin/pdm-tracking-system (access given to the lecturer on request)
 
 > **Draft.** Sections marked **[verify]** contain figures written from memory that must be checked against the cited source before submission. Each section names its owner, who checks it and must be able to defend it.
 
