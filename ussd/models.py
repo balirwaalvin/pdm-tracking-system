@@ -6,7 +6,7 @@ from django.db import models
 class SmsMessage(models.Model):
     class Status(models.TextChoices):
         SENT = "sent", "Sent"
-        LOGGED = "logged", "Logged only (no SMS key set)"
+        LOGGED = "logged", "Recorded (SMS gateway off)"
         FAILED = "failed", "Failed"
 
     phone = models.CharField(max_length=16)
