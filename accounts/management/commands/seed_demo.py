@@ -203,18 +203,18 @@ class Command(BaseCommand):
             parish=units["Seeta"],
             defaults={
                 "name": "Seeta PDM SACCO",
-                "registration_number": "SAMPLE/PDM/SEETA/001",
-                "bank_name": "Sample Bank Uganda",
-                "bank_account_number": "SAMPLE-0001",
+                "registration_number": "P.11874/RCS",
+                "bank_name": "Mukono Community Bank",
+                "bank_account_number": "3100452177",
             },
         )
         nantabulirwa, _ = Sacco.objects.update_or_create(
             parish=units["Nantabulirwa"],
             defaults={
                 "name": "Nantabulirwa PDM SACCO",
-                "registration_number": "SAMPLE/PDM/NANT/002",
-                "bank_name": "Sample Bank Uganda",
-                "bank_account_number": "SAMPLE-0002",
+                "registration_number": "P.11902/RCS",
+                "bank_name": "Mukono Community Bank",
+                "bank_account_number": "3100452198",
             },
         )
         for sacco in (seeta, nantabulirwa):
@@ -234,7 +234,7 @@ class Command(BaseCommand):
             defaults={
                 "amount": 100_000_000,
                 "release_date": datetime.date(2025, 9, 15),
-                "reference": "SAMPLE-REL-0001",
+                "reference": "PRF/2025-26/MKN/0147",
                 "recorded_by": national,
                 "confirmed_by": district,
                 "confirmed_at": now,
@@ -247,7 +247,7 @@ class Command(BaseCommand):
             defaults={
                 "amount": 50_000_000,
                 "release_date": timezone.localdate() - datetime.timedelta(days=3),
-                "reference": "SAMPLE-REL-0003",
+                "reference": "PRF/2026-27/MKN/0311",
                 "recorded_by": national,
             },
         )
@@ -322,8 +322,8 @@ class Command(BaseCommand):
         ]
         # household NIN -> repayments as (days after payout, amount, reference)
         repayments = {
-            "CM86002468KLMN": [(30, 53_000, "SAMPLE-RCPT-0001")],
-            "CM93006802ABCE": [(31, 52_250, "SAMPLE-RCPT-0002")],
+            "CM86002468KLMN": [(30, 53_000, "MM-4821-0917")],
+            "CM93006802ABCE": [(31, 52_250, "MM-5530-1022")],
         }
         for nin, enterprise, amount, term, status, days_ago, reason, scores in decided:
             household = Household.objects.get(nin=nin)
@@ -364,20 +364,17 @@ class Command(BaseCommand):
                         "amount": amount,
                         "disbursed_on": today - datetime.timedelta(days=days_ago - 1),
                         "method": Disbursement.Method.MOBILE,
-                        "reference": f"SAMPLE-TXN-{loan.pk:04d}",
+                        "reference": f"MM-{7300 + loan.pk}-{today - datetime.timedelta(days=days_ago - 1):%m%d}",
                         "recorded_by": sacco_user,
                     },
                 )
                 for days_after, paid, reference in repayments.get(nin, []):
+                    # Matched on loan, date and amount, so a changed reference never duplicates a repayment.
                     Repayment.objects.get_or_create(
                         application=loan,
-                        reference=reference,
-                        defaults={
-                            "amount": paid,
-                            "paid_on": loan.disbursement.disbursed_on + datetime.timedelta(days=days_after),
-                            "method": Repayment.Method.MOBILE,
-                            "recorded_by": sacco_user,
-                        },
+                        paid_on=loan.disbursement.disbursed_on + datetime.timedelta(days=days_after),
+                        amount=paid,
+                        defaults={"reference": reference, "method": Repayment.Method.MOBILE, "recorded_by": sacco_user},
                     )
                 # Bring the status in line with the repayments (no change if already there).
                 loan.refresh_from_db()
@@ -476,9 +473,9 @@ class Command(BaseCommand):
             parish=parish,
             defaults={
                 "name": "Kyengera PDM SACCO",
-                "registration_number": "SAMPLE/PDM/KYEN/003",
-                "bank_name": "Sample Bank Uganda",
-                "bank_account_number": "SAMPLE-0003",
+                "registration_number": "P.12035/RCS",
+                "bank_name": "Mukono Community Bank",
+                "bank_account_number": "3100458016",
             },
         )
         sacco.ensure_checklist()
@@ -489,7 +486,7 @@ class Command(BaseCommand):
             defaults={
                 "amount": 80_000_000,
                 "release_date": datetime.date(2025, 9, 15),
-                "reference": "SAMPLE-REL-0002",
+                "reference": "PRF/2025-26/WAK/0098",
                 "recorded_by": national,
                 "confirmed_at": now,
             },
@@ -538,15 +535,16 @@ class Command(BaseCommand):
             Disbursement.objects.get_or_create(
                 application=loan,
                 defaults={"amount": amount, "disbursed_on": paid_out, "method": Disbursement.Method.MOBILE,
-                          "reference": f"SAMPLE-KYEN-{loan.pk:04d}"},
+                          "reference": f"MM-{7300 + loan.pk}-{paid_out:%m%d}"},
             )
             loan.refresh_from_db()
             schedule = loan.schedule()
             for instalment in schedule[:paid]:
                 Repayment.objects.get_or_create(
                     application=loan,
-                    reference=f"SAMPLE-KYEN-R{loan.pk:03d}-{instalment.number:02d}",
-                    defaults={"amount": instalment.amount, "paid_on": instalment.due_date - datetime.timedelta(days=2),
+                    paid_on=instalment.due_date - datetime.timedelta(days=2),
+                    amount=instalment.amount,
+                    defaults={"reference": f"MM-{6100 + loan.pk * 10 + instalment.number}-{instalment.due_date:%m%d}",
                               "method": Repayment.Method.MOBILE},
                 )
             if loan.status == LoanApplication.Status.DISBURSED and loan.repayments.exists():
