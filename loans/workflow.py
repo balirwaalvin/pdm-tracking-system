@@ -30,6 +30,7 @@ TRANSITIONS = {
     (Status.DISBURSED, Status.DEFAULTED): SYSTEM,
     (Status.REPAYING, Status.DEFAULTED): SYSTEM,
     (Status.DEFAULTED, Status.CLOSED): SYSTEM,  # a defaulted loan that is later repaid in full
+    (Status.REJECTED, Status.APPRAISED): SYSTEM,  # an appeal referred the decision back to the SACCO
 }
 
 # Loans that have been paid out and are not yet closed.
