@@ -1,6 +1,6 @@
 # 4. Household journey map
 
-*Phase 2 · Journey (8 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 2 · Journey (8 marks)* · **Owner:** Nalweyiso Samalie Ruth · **Reviewed by:** Kaitesi Lillian, Ssuubi Stephen, Okello Emmanuel (sign when checked)
 
 The journey of one household (persona: Florence, section 6) from first hearing about PDM to repaying the loan. Each stage shows what she does, where (touchpoint), what goes wrong today, the exceptions, and how the prototype improves it.
 

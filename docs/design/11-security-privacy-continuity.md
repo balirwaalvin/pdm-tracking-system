@@ -1,6 +1,6 @@
 # 11. Security, privacy and continuity
 
-*Phase 4 · Security and continuity (4 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 4 · Security and continuity (4 marks)* · **Owner:** Ogenrwot Churchill and Kato Sharif Achen · **Reviewed by:** Kaitesi Lillian, Nalweyiso Samalie Ruth (sign when checked)
 
 ## 11.1 Controls
 

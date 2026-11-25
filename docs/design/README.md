@@ -2,7 +2,7 @@
 
 Phase 1, 2 and 4 documents for the MGT3151 group project. Diagrams are Mermaid: GitHub draws them; to put them in the report, paste each into https://mermaid.live and export PNG.
 
-Each document has an **Owner** and **Reviewed by** line. Groupmates: put your name on the ones you take, check the content, and replace each **[verify]** with a cited source.
+Each document has an **Owner** and **Reviewed by** line. Owners and reviewers are assigned as in [the team roles](../report/TEAM_ROLES.md). Owners check the content and replace each **[verify]** with a cited source; reviewers sign when they have checked it.
 
 | # | Document | Exam phase |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # 3. Feasibility and MVP scope
 
-*Phase 1 · Feasibility and scope (6 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 1 · Feasibility and scope (6 marks)* · **Owner:** Kabeho Samantha · **Reviewed by:** Riak James Ngong, Kutosi Pius (sign when checked)
 
 ## 3.1 MVP scope (bounded)
 

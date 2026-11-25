@@ -1,6 +1,6 @@
 # 5. Service model and value proposition
 
-*Phase 2 · Model and value proposition (8 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 2 · Model and value proposition (8 marks)* · **Owner:** Kutosi Pius · **Reviewed by:** Ogenrwot Churchill, Kato Sharif Achen (sign when checked)
 
 ## 5.1 Model: G2C, with G2B and G2G parts
 

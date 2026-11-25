@@ -1,6 +1,6 @@
 # 1. Problem statement and stakeholders
 
-*Phase 1 · Problem and stakeholders (6 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 1 · Problem and stakeholders (6 marks)* · **Owner:** Kaitesi Lillian · **Reviewed by:** Ogenrwot Churchill, Nalweyiso Samalie Ruth, Kato Sharif Achen (sign when checked)
 
 > Figures marked **[verify]** were written from general knowledge and must be checked against the cited source before submission. Add the page number or link you checked.
 

@@ -1,6 +1,6 @@
 # 2. Current and proposed process
 
-*Phase 1 · Process modelling (8 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 1 · Process modelling (8 marks)* · **Owner:** Kaitesi Lillian · **Reviewed by:** Balirwa Alvin Daniel, Ssuubi Stephen, Okello Emmanuel (sign when checked)
 
 Flowcharts with swimlanes (one lane per role). They render on GitHub; for the report, redraw them in a BPMN 2.0 tool (for example draw.io or Camunda Modeler) if the assessor prefers BPMN notation.
 

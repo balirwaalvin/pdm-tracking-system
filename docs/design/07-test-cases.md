@@ -1,6 +1,6 @@
 # 7. Test cases
 
-*Phase 3 · Correctness and testing (6 marks)* · **Owner:** ______________ (run the tests again and fill in the date and your name) · **Reviewed by:** ______________
+*Phase 3 · Correctness and testing (6 marks)* · **Owner:** Ssuubi Stephen (re-run the tests and fill in the date) · **Reviewed by:** Kaitesi Lillian (sign when checked)
 
 The exam asks for at least 8 documented cases: 5 positive, 2 validation or error, and 1 access control. These 13 are each backed by an automated test (named in the Evidence column) and, where shown, a screenshot from the live rehearsal. The full suite has **291 automated tests**, run on every push by GitHub Actions.
 

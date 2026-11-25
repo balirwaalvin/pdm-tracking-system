@@ -1,6 +1,6 @@
 # 6. Personas, accessibility and traceability
 
-*Phase 2 · User and stakeholder fit (4 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 2 · User and stakeholder fit (4 marks)* · **Owner:** Kabeho Samantha · **Reviewed by:** Balirwa Alvin Daniel, Riak James Ngong (sign when checked)
 
 ## 6.1 Personas (fictitious)
 

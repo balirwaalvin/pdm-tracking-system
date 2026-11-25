@@ -1,6 +1,6 @@
 # 9. System architecture
 
-*Phase 4 · Architecture (4 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 4 · Architecture (4 marks)* · **Owner:** Ogenrwot Churchill · **Reviewed by:** Balirwa Alvin Daniel, Ssuubi Stephen, Okello Emmanuel (sign when checked)
 
 ## 9.1 Diagram
 

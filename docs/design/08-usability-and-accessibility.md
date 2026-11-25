@@ -1,6 +1,6 @@
 # 8. Usability and accessibility checks
 
-*Phase 3 · Usability (4 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 3 · Usability (4 marks)* · **Owner:** Nalweyiso Samalie Ruth · **Reviewed by:** Ogenrwot Churchill, Okello Emmanuel (sign when checked)
 
 ## 8.1 Automated accessibility check
 

@@ -1,6 +1,6 @@
 # 10. Data design
 
-*Phase 4 · Data design (4 marks)* · **Owner:** ______________ · **Reviewed by:** ______________
+*Phase 4 · Data design (4 marks)* · **Owner:** Riak James Ngong · **Reviewed by:** Kabeho Samantha, Kutosi Pius (sign when checked)
 
 ## 10.1 Entity relationship diagram
 
