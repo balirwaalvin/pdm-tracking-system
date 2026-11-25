@@ -168,3 +168,40 @@ class SuccessStory(models.Model):
 
 
 auditlog.register(SuccessStory)
+
+
+APPEAL_WITHIN_DAYS = 30
+
+
+class Appeal(models.Model):
+    """An appeal against a rejected loan, decided by the sub-county (independent of the SACCO).
+
+    If the appeal is upheld, the loan goes back to the SACCO for a fresh decision.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Waiting for the sub-county"
+        REFERRED = "referred", "Upheld: sent back to the SACCO"
+        DISMISSED = "dismissed", "Dismissed: the rejection stands"
+
+    loan = models.OneToOneField("loans.LoanApplication", on_delete=models.PROTECT, related_name="appeal")
+    grounds = models.TextField(help_text="Why the decision should be looked at again.")
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    filed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    filed_at = models.DateTimeField(default=timezone.now)
+    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-filed_at"]
+
+    def __str__(self):
+        return f"Appeal on loan {self.loan_id} ({self.get_status_display()})"
+
+    @property
+    def reference(self):
+        return f"APL-{self.pk:06d}" if self.pk else "APL-new"
+
+
+auditlog.register(Appeal)
