@@ -65,8 +65,8 @@ PAGES = [
             (r.PARISH_CHIEF, r.PDC, r.SUBCOUNTY_OFFICIAL, r.AUDITOR),
             "Success stories: drafts, consent, the PDC's checks and what is published."),
     Feature("ussd_simulator", "USSD", "ussd:simulator",
-            (r.LC1_CHAIRPERSON, r.PARISH_CHIEF, r.SUBCOUNTY_OFFICIAL),
-            "Try the household USSD menu, to help residents who ask."),
+            (r.HOUSEHOLD, r.LC1_CHAIRPERSON, r.PARISH_CHIEF, r.SUBCOUNTY_OFFICIAL),
+            "The PDM USSD menu on a phone screen: status, loan and complaints. Households use their own number."),
     Feature("audit_log", "Audit log", "audit_log", (r.AUDITOR,),
             "Every change to every record, read-only, with CSV download."),
     Feature("sign_in_log", "Sign-ins", "sign_in_log", (r.AUDITOR,),
@@ -149,7 +149,7 @@ def access_flags(user):
 
 # One line per role, shown on the user's home page under "Your access".
 ROLE_SUMMARIES = {
-    r.HOUSEHOLD: "You can see your own household's PDM record and loan. No one else's.",
+    r.HOUSEHOLD: "You can see your own household's PDM record and loan, and use USSD with your own number. No one else's.",
     r.GROUP_EXECUTIVE: "You apply for loans on behalf of verified members of your enterprise group.",
     r.LC1_CHAIRPERSON: "You confirm whether households really live in your village.",
     r.PARISH_CHIEF: "You profile households in your parish and follow up their progress.",

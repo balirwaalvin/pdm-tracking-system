@@ -1,15 +1,32 @@
 {% extends "base.html" %}
-{% block title %}USSD simulator · PDM Tracking System{% endblock %}
+{% block title %}USSD · PDM Tracking System{% endblock %}
 {% block content %}
-<h1 class="h3 mb-1">USSD simulator</h1>
-<p class="text-muted">Runs the same menu a household reaches by dialling the PDM short code on any phone. Choose a household in your area and dial, for example to help a resident at the parish office.</p>
+{% if own_phone %}
+<h1 class="h3 mb-1">PDM on your phone</h1>
+<p class="text-muted">The same menu you reach by dialling the PDM code on any phone, even without internet or a smartphone. It is free. Check your status and loan, report a problem or track a complaint, in English or Luganda.</p>
+{% else %}
+<h1 class="h3 mb-1">USSD help desk</h1>
+<p class="text-muted">The same menu a household reaches by dialling the PDM code on any phone. Choose a household in your area and dial, for example to help a resident at the parish office.</p>
+{% endif %}
 <div class="row g-4">
   <div class="col-md-5">
     <form method="post" class="card shadow-sm"><div class="card-body">{% csrf_token %}
+      {% if own_phone %}
+        {% with mine=households.first %}
+        {% if mine %}
+          <p class="form-label mb-1">Your number</p>
+          <p class="h5 mb-3 font-monospace">+{{ mine.phone }}</p>
+          <input type="hidden" id="phone" name="phone" value="{{ mine.phone }}">
+        {% else %}
+          <div class="alert alert-warning mb-3">There is no phone number on your household record. Ask your Parish Chief to add it.</div>
+        {% endif %}
+        {% endwith %}
+      {% else %}
       <label class="form-label" for="phone">Dial as</label>
       <select class="form-select mb-3" id="phone" name="phone">
         {% for household in households %}<option value="{{ household.phone }}" {% if household.phone == phone %}selected{% endif %}>{{ household.head_name }} · {{ household.village.name }} · {{ household.phone }}</option>{% endfor %}
       </select>
+      {% endif %}
       <button class="btn btn-pdm" name="action" value="dial">Dial *384*1#</button>
       {% if error %}<div class="alert alert-danger mt-3 mb-0">{{ error }}</div>{% endif %}
     </div></form>
