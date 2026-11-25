@@ -10,6 +10,7 @@ This is for sample data only. A real system would never delete its audit trail.
 """
 
 from auditlog.models import LogEntry
+from django.apps import apps
 from django.core.management import call_command
 from django.core.management.color import no_style
 from django.db import connection, transaction
@@ -47,3 +48,20 @@ def reset_demo_data(stdout=None):
         # The rebuilt records start with a clean audit trail.
         LogEntry.objects.all().delete()
     return removed
+
+
+APPS_WITH_DEMO_DATA = ("accounts", "registry", "saccos", "loans", "feedback", "ussd")
+
+
+def sync_sequences():
+    """Set each table's numbering to follow its highest existing record.
+
+    PostgreSQL does not undo a numbering change when a transaction rolls back, so a
+    reset cut off half-way (for example by a server time limit) can leave numbering
+    behind existing rows, and every new record would then collide. Running this
+    before seeding repairs that.
+    """
+    models = [m for m in apps.get_models() if m._meta.app_label in APPS_WITH_DEMO_DATA]
+    with connection.cursor() as cursor:
+        for sql in connection.ops.sequence_reset_sql(no_style(), models):
+            cursor.execute(sql)

@@ -112,7 +112,13 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.password = options["password"]
+        from django.contrib.auth.hashers import make_password
+
+        from accounts.demo import sync_sequences
+
+        sync_sequences()  # repair numbering after any interrupted reset
+        # Hash the shared demo password once: hashing is deliberately slow, and there are 21 demo logins.
+        self.password_hash = make_password(options["password"])
         units = self.create_units()
         self.create_users(units, options["password"])
         self.create_groups_and_households(units)
@@ -159,7 +165,7 @@ class Command(BaseCommand):
                     "admin_unit": units[unit_name] if unit_name else None,
                 },
             )
-            user.set_password(password)
+            user.password = self.password_hash
             user.save()
             user.groups.set([Group.objects.get(name=role)])
 
@@ -221,7 +227,7 @@ class Command(BaseCommand):
                 username=username,
                 defaults={"first_name": first, "last_name": last, "phone": household.phone, "admin_unit": household.village},
             )
-            user.set_password(self.password)
+            user.password = self.password_hash
             user.save()
             user.groups.set([household_role])
             Household.objects.filter(account=user).exclude(pk=household.pk).update(account=None)
