@@ -64,6 +64,9 @@ PAGES = [
     Feature("stories", "Stories", "feedback:story_list",
             (r.PARISH_CHIEF, r.PDC, r.SUBCOUNTY_OFFICIAL, r.AUDITOR),
             "Success stories: drafts, consent, the PDC's checks and what is published."),
+    Feature("appeals", "Appeals", "feedback:appeal_list",
+            (r.SUBCOUNTY_OFFICIAL, r.DISTRICT_OFFICIAL, r.NATIONAL_OFFICIAL, r.AUDITOR),
+            "Appeals against rejected loans, decided by the sub-county."),
     Feature("ussd_simulator", "USSD", "ussd:simulator",
             (r.HOUSEHOLD, r.LC1_CHAIRPERSON, r.PARISH_CHIEF, r.SUBCOUNTY_OFFICIAL),
             "The PDM USSD menu on a phone screen: status, loan and complaints. Households use their own number."),
@@ -96,6 +99,10 @@ ACTIONS = [
             "Write up a household's success and record their consent to publish it."),
     Feature("check_story", "Check success stories", "", (r.PDC,),
             "Check each story against the household's records, then approve it or send it back."),
+    Feature("file_appeal", "Appeal a rejected loan", "", (r.HOUSEHOLD, r.GROUP_EXECUTIVE),
+            "Ask the sub-county to look again at a rejected loan, within 30 days."),
+    Feature("decide_appeal", "Decide appeals", "", (r.SUBCOUNTY_OFFICIAL,),
+            "Dismiss an appeal, or refer the loan back to the SACCO for a fresh decision."),
     Feature("record_release", "Record fund releases", "", (r.NATIONAL_OFFICIAL,),
             "Record Parish Revolving Fund transfers to eligible SACCOs."),
     Feature("confirm_release", "Confirm fund releases", "", (r.DISTRICT_OFFICIAL,),
@@ -110,7 +117,7 @@ ICONS = {
     "sign_in_log": "key", "register_household": "person-plus", "verify_household": "patch-check",
     "register_group": "people-fill", "apply_loan": "file-earmark-plus", "tick_checklist": "list-check",
     "appraise_loan": "clipboard-check", "raise_complaint": "chat-left-text", "respond_complaint": "reply",
-    "draft_story": "pencil-square", "check_story": "check2-circle", "record_release": "send", "confirm_release": "check2-all",
+    "draft_story": "pencil-square", "appeals": "arrow-repeat", "file_appeal": "arrow-repeat", "decide_appeal": "hammer", "check_story": "check2-circle", "record_release": "send", "confirm_release": "check2-all",
 }
 
 _ALL = {feature.key: feature for feature in PAGES + ACTIONS}
