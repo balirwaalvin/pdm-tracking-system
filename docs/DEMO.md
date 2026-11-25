@@ -13,6 +13,31 @@ Live site: **https://pdm.treez.tech** · every password is **`pdm12345`**. To se
 
 If a password is mistyped five times, that account locks for 15 minutes. Use another account for the same role (for example `saccochair` instead of `sacco`), or reset the demo.
 
+## The 12-minute version (use this for the exam)
+
+The exam allows **12 minutes** for the presentation and live demo together, then up to 8 minutes of questions. This plan fits: 2 minutes of slides, 9 minutes live, 1 minute to close. The longer walkthrough further down is for practice and for questions.
+
+**Set up three browser windows before you start** (a normal window, a private window, and a second browser), already signed in as `saccochair`, `florence` and `national`. Use the main window for the other roles. Switching role by signing out and in costs about 10 seconds each time.
+
+| Time | Who | What to show | What to say |
+| --- | --- | --- | --- |
+| 0:00 | Slides | Problem, stakeholders, the current process and its bottleneck; the proposed process | *PDM loans are tracked on paper across ten offices; households cannot see where their application is, and complaints have no trail.* |
+| 1:00 | Slides | Architecture and security in one slide | *Django and PostgreSQL on Render, HTTPS, role-based access, an audit trail; USSD for phones without data.* |
+| 2:00 | Signed out | `/eligibility/`: answer the four questions | *Any citizen can check eligibility first, without giving personal data.* |
+| 2:30 | `lc1` | Workspace → the household waiting → **Confirm household**; point at the mock ID check | *Identity is checked against a mock national ID register, then confirmed by the LC I.* |
+| 3:15 | `groupexec` | New application for **Florence Atim**, UGX 600,000 → **Submit to the SACCO** | *Only verified members, up to UGX 1 million, one open loan.* |
+| 4:00 | `sacco` | **Appraise** (4, 4, 4, approve); show the maker-checker note | *The official who appraises cannot decide.* |
+| 4:45 | `saccochair` window | **Approve** → **Record disbursement** → **Record repayment** (53,000) → open the receipt | *A second official decides; the household gets an SMS at each step.* |
+| 6:15 | `florence` window | **My household**: loan, schedule, receipt, SMS alerts; then **USSD** → Dial → `2` → `0` (Luganda) | *The household is the main stakeholder: same information on any phone, in English or Luganda.* |
+| 7:30 | `sylvia` | **My household** → her rejected loan → **Appeal this decision** with a reason | *Every refusal has a reason and can be appealed to an independent office.* |
+| 8:15 | `subcounty` | **Appeals** → Sylvia's appeal → **Refer back to the SACCO**; **Complaints** → the bribery report that skipped the parish | *Appeals and bribery reports go to the sub-county, away from the officials involved.* |
+| 9:30 | `national` window | **Dashboard**: two districts, portfolio at risk | *Oversight from parish to ministry, from the same live record.* |
+| 10:15 | `auditor` | **Audit log**, search `Florence`: every step with a name | *The auditor reads everything and changes nothing.* |
+| 11:00 | Slides | Close: results, testing, what is next | *274 automated tests; every role sees only its own work; sample data only.* |
+| 12:00 | | End | |
+
+If you are running late, drop the appeal (7:30 to 9:30) first, then the dashboard; never drop the loan steps.
+
 ## The starting state after a reset
 
 | Record | State |
@@ -26,7 +51,7 @@ If a password is mistyped five times, that account locks for 15 minutes. Use ano
 | Story "A sty built by the group" (Ronald) | Waiting for the PDC's check |
 | Fund release 2026/27, UGX 50,000,000 | Recorded by the national office, not yet confirmed by the district |
 
-## The journey
+## The full walkthrough (about 15 minutes: for practice and for questions)
 
 ### 0. Opening (1 min): signed out
 
