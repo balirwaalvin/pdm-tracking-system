@@ -28,3 +28,4 @@ Taken on the live site (https://pdm.treez.tech) during the rehearsal on 25 Nov 2
 | 22-audit-log.png | 10 Oversee | Audit log: who did each step |
 | 23-sign-in-log.png | 10 Oversee | Sign-in log for the auditor |
 | 24-household-on-a-phone.png | 8 Check | A household's own workspace on a phone |
+| 25-household-ussd.png | 8 Check | A household uses USSD with its own number |
