@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -200,3 +201,8 @@ X_FRAME_OPTIONS = "DENY"
 # The USSD callback must be public for Africa's Talking, so when this is set it also
 # requires ?token=<value> in the callback address. Leave empty locally.
 USSD_CALLBACK_TOKEN = os.environ.get("USSD_CALLBACK_TOKEN", "")
+
+# Tests only: a fast password hasher, because the sample data sets many passwords.
+# Real sign-ins keep Django's strong default hashers.
+if len(sys.argv) > 1 and sys.argv[1] == "test":
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
