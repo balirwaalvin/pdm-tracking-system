@@ -2,7 +2,7 @@
 
 For the presentation on **Thu 26 Nov 2026**. About **15 minutes**. One household, **Florence Atim** of Seeta Central village, goes through the whole journey live; the sample data covers the rest.
 
-Live site: **https://pdm.treez.tech** · every password is **`pdm12345`** (also listed under "Demo accounts" on the sign-in page).
+Live site: **https://pdm.treez.tech** · every password is **`pdm12345`**. To see the account list on the sign-in page, open **https://pdm.treez.tech/accounts/login/?demo** (it is hidden otherwise, so the portal looks like a real one).
 
 ## Before you start (15 minutes before)
 
