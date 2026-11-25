@@ -15,30 +15,42 @@ If a password is mistyped five times, that account locks for 15 minutes. Use ano
 
 ## The 12-minute version (use this for the exam)
 
-The exam allows **12 minutes** for the presentation and live demo together, then up to 8 minutes of questions. This plan fits: 2 minutes of slides, 9 minutes live, 1 minute to close. The longer walkthrough further down is for practice and for questions.
+The exam allows **12 minutes** for the presentation and live demo together, then up to 8 minutes of questions. All the explaining comes first (slides 1 to 13, about 6 minutes), then the live demo (slide 14, about 5¾ minutes), then the thank you (slide 15). The longer walkthrough further down is for practice and for questions.
 
 **Set up three browser windows before you start** (a normal window, a private window, and a second browser), already signed in as `saccochair`, `florence` and `national`. Use the main window for the other roles. Switching role by signing out and in costs about 10 seconds each time.
 
-| Time | Who | What to show | What to say |
+**Part 1: slides (0:00 to 5:45)**
+
+| Time | Slide | Who | Topic |
 | --- | --- | --- | --- |
-| 0:00 | Slides | Problem, stakeholders, the current process and its bottleneck; the proposed process | *PDM loans are tracked on paper across ten offices; households cannot see where their application is, and complaints have no trail.* |
-| 1:00 | Slides | Architecture and security in one slide | *Django and PostgreSQL on Render, HTTPS, role-based access, an audit trail; USSD for phones without data.* |
-| 2:00 | Signed out | `/eligibility/`: answer the four questions | *Any citizen can check eligibility first, without giving personal data.* |
-| 2:30 | `lc1` | Workspace → the household waiting → **Confirm household**; point at the mock ID check | *Identity is checked against a mock national ID register, then confirmed by the LC I.* |
-| 3:15 | `groupexec` | New application for **Florence Atim**, UGX 600,000 → **Submit to the SACCO** | *Only verified members, up to UGX 1 million, one open loan.* |
-| 4:00 | `sacco` | **Appraise** (4, 4, 4, approve); show the maker-checker note | *The official who appraises cannot decide.* |
-| 4:45 | `saccochair` window | **Approve** → **Record disbursement** → **Record repayment** (53,000) → open the receipt | *A second official decides; the household gets an SMS at each step.* |
-| 6:15 | `florence` window | **My household**: loan, schedule, receipt, SMS alerts; then **USSD** → Dial → `2` → `0` (Luganda) | *The household is the main stakeholder: same information on any phone, in English or Luganda.* |
-| 7:30 | `sylvia` | **My household** → her rejected loan → **Appeal this decision** with a reason | *Every refusal has a reason and can be appealed to an independent office.* |
-| 8:15 | `subcounty` | **Appeals** → Sylvia's appeal → **Refer back to the SACCO**; **Complaints** → the bribery report that skipped the parish | *Appeals and bribery reports go to the sub-county, away from the officials involved.* |
-| 9:30 | `national` window | **Dashboard**: two districts, portfolio at risk | *Oversight from parish to ministry, from the same live record.* |
-| 10:15 | `auditor` | **Audit log**, search `Florence`: every step with a name | *The auditor reads everything and changes nothing.* |
-| 11:00 | Slides | Close: results, testing, what is next | *291 automated tests; every role sees only its own work; sample data only.* |
-| 12:00 | | End | |
+| 0:00 | 1–2 | Alvin | Introduction; who presents what |
+| 0:15 | 3–4 | Lillian | Problem; current and proposed process (the bottleneck) |
+| 1:15 | 5–6 | Churchill | Architecture; security controls |
+| 2:15 | 7 | Samantha | Who we designed for (personas) |
+| 2:45 | 8 | James | Data design (ERD) |
+| 3:15 | 9 | Stephen | Test cases; the 53,000 calculation |
+| 3:45 | 10 | Ruth | Journey map; accessibility |
+| 4:15 | 11 | Pius | Service model: G2C, G2B, G2G, public value |
+| 4:45 | 12 | Sharif | Threats and privacy |
+| 5:15 | 13 | Emmanuel | Results; ends with “Now we will show you it working.” |
+
+**Part 2: live demo (slide 14, 5:45 to 11:30). Alvin drives; each presenter says one line.**
+
+| Time | Who | Account | What to show | What to say |
+| --- | --- | --- | --- | --- |
+| 5:45 | Samantha | signed out, then `lc1` | `/eligibility/` (four questions); then the household waiting → **Confirm household**; point at the mock ID check | *Anyone can check eligibility first; identity is checked, then confirmed by the LC I.* |
+| 6:30 | James | `groupexec`, then `sacco` | New application for **Florence Atim**, UGX 600,000 → **Submit to the SACCO**; then **Appraise** (4, 4, 4, approve); show the maker-checker note | *Verified members only, up to UGX 1 million; the official who appraises cannot decide.* |
+| 7:30 | Stephen | `saccochair` window | **Approve** → **Record disbursement** → **Record repayment** (53,000) → open the receipt | *A second official decides; the household gets an SMS at each step.* |
+| 8:30 | Ruth | `florence` window | **My household**: loan, schedule, receipt, SMS alerts; then **USSD** → Dial → `2` → `0` (Luganda) | *The same information on any phone, in English or Luganda.* |
+| 9:15 | Pius | `sylvia`, then `subcounty` | Sylvia's rejected loan → **Appeal this decision**; then **Appeals** → **Refer back to the SACCO** | *Every refusal has a reason and can be appealed to an independent office.* |
+| 10:15 | Sharif | `national` window, then `auditor` | **Dashboard** (two districts); then **Audit log**, search `Florence` | *Oversight from parish to ministry; the auditor reads everything and changes nothing.* |
+| 11:15 | Alvin | | Switch back to the slides | |
+
+**Part 3: close (slide 15, 11:30 to 12:00).** Emmanuel: *one shared record for every PDM stakeholder.* Thank you, then questions. Backup slides after the thank you: B01–B06 are demo screenshots (use them if the live site fails), B07–B09 extra diagrams and rules.
 
 Who presents each segment, and what each member must be ready to defend: [docs/report/TEAM_ROLES.md](report/TEAM_ROLES.md).
 
-If you are running late, drop the appeal (7:30 to 9:30) first, then the dashboard; never drop the loan steps.
+If you are running late, Pius gives the appeal in one sentence (9:15) and Sharif shows only the audit log; never drop the loan steps (6:30 to 8:30).
 
 ## The starting state after a reset
 
