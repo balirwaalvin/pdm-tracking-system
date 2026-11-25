@@ -36,6 +36,8 @@ The exam allows **12 minutes** for the presentation and live demo together, then
 | 11:00 | Slides | Close: results, testing, what is next | *291 automated tests; every role sees only its own work; sample data only.* |
 | 12:00 | | End | |
 
+Who presents each segment, and what each member must be ready to defend: [docs/report/TEAM_ROLES.md](report/TEAM_ROLES.md).
+
 If you are running late, drop the appeal (7:30 to 9:30) first, then the dashboard; never drop the loan steps.
 
 ## The starting state after a reset

@@ -104,3 +104,4 @@ Follow the [README](../../README.md): clone, copy `.env.example` to `.env`, then
 - **B.** [Role matrix](APPENDIX_B_ROLE_MATRIX.md)
 - **C.** [Task log](APPENDIX_C_TASK_LOG.md)
 - **D.** [Individual contribution statements](APPENDIX_D_CONTRIBUTIONS.md)
+- [Team roles for the presentation and defence](TEAM_ROLES.md)
