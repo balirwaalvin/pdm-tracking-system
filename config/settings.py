@@ -176,7 +176,11 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "loggers": {"ussd": {"handlers": ["console"], "level": "INFO"}},
+    "loggers": {
+        "ussd": {"handlers": ["console"], "level": "INFO"},
+        # Server errors with their traceback in the Render log (DEBUG is off in production).
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
 }
 
 # Sessions end after 30 minutes without activity, and when the browser closes.
