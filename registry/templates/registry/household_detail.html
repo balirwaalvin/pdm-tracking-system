@@ -33,6 +33,10 @@
     <div class="card shadow-sm">
       <div class="card-body">
         <h2 class="h6 text-uppercase text-muted">Verification</h2>
+        <div class="d-flex gap-2 align-items-start p-2 mb-3 rounded-3" style="background: var(--pdm-ground)">
+          <i class="bi {% if identity_result == 'matched' %}bi-person-check-fill text-success{% else %}bi-person-exclamation text-warning{% endif %} fs-5"></i>
+          <div class="small"><strong>Identity check (mock national ID register)</strong><br>{{ identity_note }}</div>
+        </div>
         {% if household.verified_by %}
           <p class="mb-1">{{ household.get_verification_display }} by <strong>{{ household.verified_by }}</strong> on {{ household.verified_at|date:"j M Y, H:i" }}.</p>
           {% if household.verification_note %}<p class="text-muted mb-0">“{{ household.verification_note }}”</p>{% endif %}

@@ -13,6 +13,7 @@ from accounts.scoping import check_unit_in_scope
 
 from .forms import EnterpriseGroupForm, HouseholdForm
 from . import eligibility
+from .mock_register import MATCHED, check_identity
 from .models import EnterpriseGroup, Household
 
 # Who may open what comes from the access policy (accounts/access.py).
@@ -66,7 +67,9 @@ class HouseholdCreateView(RoleRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.registered_by = self.request.user
+        result, note = check_identity(form.cleaned_data["nin"], form.cleaned_data["head_name"])
         messages.success(self.request, "Household registered. It now waits for the LC I Chairperson to verify it.")
+        (messages.info if result == MATCHED else messages.warning)(self.request, f"Identity check: {note}")
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -91,6 +94,7 @@ class HouseholdDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
             access.allows(user, "verify_household")
             and self.object.verification == Household.Verification.PENDING
         )
+        context["identity_result"], context["identity_note"] = check_identity(self.object.nin, self.object.head_name)
         return context
 
 
