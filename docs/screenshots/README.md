@@ -1,6 +1,6 @@
 # Screenshots for the slides
 
-Taken on the live site (https://pdm.treez.tech) during the rehearsal on 23 Nov 2026, following [DEMO.md](../DEMO.md). 2880 × 1800 (2× for a sharp projector image); 24 is a phone (Pixel 7). Sample data only.
+Taken on the live site (https://pdm.treez.tech) during the rehearsal on 25 Nov 2026, after the final look-and-feel changes, following [DEMO.md](../DEMO.md). 2880 × 1800 (2× for a sharp projector image); 24 is a phone (Pixel 7). Sample data only.
 
 | File | Journey stage | Shows |
 | --- | --- | --- |
