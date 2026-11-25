@@ -105,6 +105,7 @@ SMS alerts need `AT_USERNAME`, `AT_API_KEY` and (optionally) `AT_SENDER_ID`. Wit
 - [User guide](docs/USER_GUIDE.md): one section per role.
 - [Security check](docs/SECURITY_CHECK.md) and [roadmap](docs/ROADMAP.md).
 - [Design documents](docs/design/README.md): problem, process models, journey map, personas, test cases, accessibility, architecture, ERD, threats and backup (exam phases 1–4).
+- [Report draft](docs/report/REPORT.md) with appendices: AI-use declaration, role matrix, task log and contribution statements.
 
 **Reset the demo data** before a rehearsal: `python manage.py reset_demo --yes`, or sign in as `admin` and choose **Reset demo data** in the menu under your name (this is how to do it on the live site). A scheduled GitHub Action keeps the live site awake on 25 and 26 November.
 
