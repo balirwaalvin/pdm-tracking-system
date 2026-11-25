@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Appeals · PDM Tracking System{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Appeals</h1>
+<p class="text-muted">Appeals against rejected loans. The sub-county decides them, independently of the SACCO: dismiss, or refer the loan back to the SACCO for a fresh decision.</p>
+<div class="card shadow-sm"><div class="table-responsive">
+  <table class="table table-hover mb-0 align-middle">
+    <thead class="table-light"><tr><th>Reference</th><th>Household</th><th>Loan</th><th>Filed</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for appeal in appeals %}
+      <tr>
+        <td><a href="{% url 'feedback:appeal_detail' appeal.pk %}">{{ appeal.reference }}</a></td>
+        <td>{{ appeal.loan.household.head_name }}<div class="small text-muted">{{ appeal.loan.household.village.name }}</div></td>
+        <td>UGX {{ appeal.loan.amount|intcomma }}<div class="small text-muted">{{ appeal.loan.sacco.name }}</div></td>
+        <td class="text-nowrap">{{ appeal.filed_at|date:"j M Y" }}</td>
+        <td>{% include "feedback/_appeal_badge.html" %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="5" class="text-muted text-center py-4">No appeals.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% include "_pagination.html" %}
+{% endblock %}

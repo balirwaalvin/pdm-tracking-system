@@ -1,0 +1,1 @@
+{% with s=appeal.status %}<span class="badge {% if s == 'pending' %}text-bg-warning{% elif s == 'referred' %}text-bg-success{% else %}text-bg-secondary{% endif %}">{{ appeal.get_status_display }}</span>{% endwith %}

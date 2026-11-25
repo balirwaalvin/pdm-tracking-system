@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ appeal.reference }} · PDM Tracking System{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'feedback:appeal_list' %}">Appeals</a></li><li class="breadcrumb-item active">{{ appeal.reference }}</li></ol></nav>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <h1 class="h3 mb-1">{{ appeal.reference }}: loan of UGX {{ appeal.loan.amount|intcomma }}</h1>
+    <p class="text-muted mb-0">{{ appeal.loan.household.head_name }} · {{ appeal.loan.sacco.name }} · filed by {{ appeal.filed_by|default:"-" }} on {{ appeal.filed_at|date:"j M Y" }}</p>
+  </div>
+  <div>{% include "feedback/_appeal_badge.html" %}</div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm mb-3"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">The household's grounds</h2>
+      <p class="mb-0">{{ appeal.grounds|linebreaksbr }}</p>
+    </div></div>
+    {% if appeal.decided_by %}
+    <div class="card shadow-sm mb-3"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Decision</h2>
+      <p class="mb-1">{{ appeal.get_status_display }} by {{ appeal.decided_by }} on {{ appeal.decided_at|date:"j M Y" }}</p>
+      <p class="mb-0">{{ appeal.decision_note|linebreaksbr }}</p>
+    </div></div>
+    {% endif %}
+    {% if can_decide %}
+    <form method="post" action="{% url 'feedback:appeal_decide' appeal.pk %}" class="card shadow-sm border-warning" novalidate>{% csrf_token %}<div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Your decision</h2>
+      <div class="inline-choices mb-2">
+        <div class="form-check"><input class="form-check-input" type="radio" name="decision" id="refer" value="refer" checked><label class="form-check-label" for="refer">Refer back to the SACCO</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="decision" id="dismiss" value="dismiss"><label class="form-check-label" for="dismiss">Dismiss: the rejection stands</label></div>
+      </div>
+      <label class="form-label" for="note">Reason (the household sees it)</label>
+      <textarea class="form-control mb-3" id="note" name="note" rows="3" required></textarea>
+      <button class="btn btn-pdm">Record decision</button>
+    </div></form>
+    {% endif %}
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">The SACCO's decision</h2>
+      <p class="mb-1"><strong>Rejected</strong> by {{ appeal.loan.decided_by|default:"the SACCO" }} on {{ appeal.loan.decided_at|date:"j M Y" }}</p>
+      <p class="mb-2">{{ appeal.loan.decision_reason }}</p>
+      {% if appraisal %}<p class="small text-muted mb-0">Appraisal score {{ appraisal.total_score }} / 15 · {{ appraisal.reasons }}</p>{% endif %}
+      {% if access.loans %}<a class="small" href="{% url 'loans:loan_detail' appeal.loan.pk %}">Open the loan</a>{% endif %}
+    </div></div>
+  </div>
+</div>
+{% endblock %}

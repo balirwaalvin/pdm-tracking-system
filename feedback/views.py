@@ -1,7 +1,10 @@
-"""Complaint pages and success story pages."""
+"""Complaint, appeal and success story pages."""
 
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.views import redirect_to_login
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
@@ -11,9 +14,11 @@ from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_require
 from accounts.scoping import check_unit_in_scope
 from dashboards.exports import CsvExportMixin
 
-from . import services, stories
+from loans.models import LoanApplication
+
+from . import appeals, services, stories
 from .forms import ComplaintForm, ResponseForm, StoryCheckForm, StoryForm
-from .models import Complaint, SuccessStory
+from .models import Appeal, Complaint, SuccessStory
 
 
 class ComplaintListView(RoleRequiredMixin, ScopedQuerysetMixin, CsvExportMixin, ListView):
@@ -221,3 +226,67 @@ def check_story(request, pk):
         else:
             messages.success(request, "Story sent back with your note.")
     return redirect("feedback:story_detail", pk=pk)
+
+
+# Appeals against rejected loans
+
+
+def file_appeal(request, loan_pk):
+    """The household (or its group executive) appeals a rejected loan to the sub-county."""
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+    loan = get_object_or_404(LoanApplication.objects.select_related("household__village", "sacco"), pk=loan_pk)
+    if not appeals.can_appeal(loan, request.user):
+        if not access.allows(request.user, "file_appeal"):
+            raise PermissionDenied("Your role cannot appeal loan decisions.")
+        messages.error(request, "This decision cannot be appealed now.")
+        return redirect("home")
+    if request.method == "POST":
+        try:
+            appeal = appeals.file_appeal(loan, request.user, request.POST.get("grounds", ""))
+        except appeals.AppealError as error:
+            messages.error(request, str(error))
+        else:
+            messages.success(request, f"Appeal {appeal.reference} sent to the sub-county office.")
+            own = getattr(request.user, "household_record", None) == loan.household
+            return redirect("my_household" if own else "loans:loan_detail", **({} if own else {"pk": loan.pk}))
+    return render(request, "feedback/appeal_form.html", {"loan": loan, "deadline": appeals.deadline(loan)})
+
+
+class AppealListView(RoleRequiredMixin, ScopedQuerysetMixin, ListView):
+    model = Appeal
+    allowed_roles = access.roles_for("appeals")
+    unit_field = "loan__household__village"
+    context_object_name = "appeals"
+    paginate_by = 25
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("loan__household__village", "loan__sacco")
+
+
+class AppealDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
+    model = Appeal
+    allowed_roles = access.roles_for("appeals")
+    unit_field = "loan__household__village"
+    context_object_name = "appeal"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_decide"] = self.object.status == Appeal.Status.PENDING and access.allows(self.request.user, "decide_appeal")
+        context["appraisal"] = getattr(self.object.loan, "appraisal", None)
+        return context
+
+
+@require_POST
+@role_required(*access.roles_for("decide_appeal"))
+def decide_appeal(request, pk):
+    appeal = get_object_or_404(Appeal.objects.select_related("loan__household__village"), pk=pk)
+    check_unit_in_scope(request.user, appeal.loan.household.village)
+    try:
+        with transaction.atomic():
+            appeals.decide_appeal(appeal, request.user, request.POST.get("decision") == "refer", request.POST.get("note", ""))
+    except appeals.AppealError as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(request, f"Appeal {appeal.get_status_display().lower()}. The household has been told by SMS.")
+    return redirect("feedback:appeal_detail", pk=pk)

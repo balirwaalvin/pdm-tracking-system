@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Appeal a decision · PDM Tracking System{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7">
+  <p class="page-eyebrow mb-1">Appeal</p>
+  <h1 class="h3 mb-1">Appeal the rejection of this loan</h1>
+  <p class="text-muted">The sub-county office, which is independent of the SACCO, will look at the decision again. If it agrees with you, the SACCO decides your loan again. You will be told by SMS. Appeal by {{ deadline|date:"j M Y" }}.</p>
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <dl class="row mb-0 small">
+      <dt class="col-sm-4">Household</dt><dd class="col-sm-8">{{ loan.household.head_name }}</dd>
+      <dt class="col-sm-4">Loan</dt><dd class="col-sm-8">UGX {{ loan.amount|intcomma }} · {{ loan.enterprise }}</dd>
+      <dt class="col-sm-4">SACCO's reason</dt><dd class="col-sm-8">{{ loan.decision_reason|default:"-" }}</dd>
+    </dl>
+  </div></div>
+  <form method="post" class="card shadow-sm" novalidate>{% csrf_token %}<div class="card-body">
+    <label class="form-label" for="grounds">Why should the decision be looked at again?</label>
+    <textarea class="form-control mb-1" id="grounds" name="grounds" rows="4" required minlength="10"></textarea>
+    <div class="form-text mb-3">For example: information the SACCO did not have, or a reason you think is wrong.</div>
+    <div class="d-flex gap-2"><button class="btn btn-pdm">Send appeal</button><a class="btn btn-outline-secondary" href="{% url 'home' %}">Cancel</a></div>
+  </div></form>
+</div></div>
+{% endblock %}
