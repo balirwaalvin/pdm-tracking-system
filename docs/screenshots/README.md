@@ -29,3 +29,8 @@ Taken on the live site (https://pdm.treez.tech) during the rehearsal on 25 Nov 2
 | 23-sign-in-log.png | 10 Oversee | Sign-in log for the auditor |
 | 24-household-on-a-phone.png | 8 Check | A household's own workspace on a phone |
 | 25-household-ussd.png | 8 Check | A household uses USSD with its own number |
+| 26-eligibility-check.png | 0 Eligibility | The public eligibility self-check |
+| 27-mock-identity-check.png | 2 Verify | The mock national ID register check shown to the LC I |
+| 28-household-own-record.png | 7–8 | Florence's own record: loan, schedule, receipt, eligibility checklist |
+| 29-appeal-form.png | 9 Appeal | A household appeals a rejected loan |
+| 30-appeal-upheld.png | 9 Appeal | The sub-county refers the appeal back to the SACCO |

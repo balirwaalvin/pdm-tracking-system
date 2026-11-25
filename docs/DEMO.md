@@ -140,6 +140,7 @@ A new loan for Christine or Patrick takes about three minutes: they are in the K
 
 - **Mon 23 Nov 2026, live site:** the whole script was run in a browser on https://pdm.treez.tech, from a reset, every step clicked as written above. All ten stages passed. Pages answered in 1 to 2 seconds; a reset took about 35 seconds; the first visit after a sleep took about 33 seconds. The demo was reset again afterwards. Screenshots: [screenshots/](screenshots/).
 - **Wed 25 Nov 2026, live site:** re-run after the final changes (household USSD, household logins, faster reset): all ten stages passed; a reset took about 12 seconds. Each of the ten household logins was checked to see only its own record, and a whole new loan was run for `christine`.
+- **Wed 25 Nov 2026, live site, 12-minute plan:** eligibility check, mock identity check, Florence's loan from application to repayment, her own view and USSD, Sylvia's appeal upheld by the sub-county, dashboard and audit log: all passed, and the demo was reset afterwards.
 - The same script also runs as an automated test (`dashboards/test_demo_script.py`) on every push.
 
 ## Likely questions
