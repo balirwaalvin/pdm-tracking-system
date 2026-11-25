@@ -33,7 +33,7 @@ The exam allows **12 minutes** for the presentation and live demo together, then
 | 8:15 | `subcounty` | **Appeals** → Sylvia's appeal → **Refer back to the SACCO**; **Complaints** → the bribery report that skipped the parish | *Appeals and bribery reports go to the sub-county, away from the officials involved.* |
 | 9:30 | `national` window | **Dashboard**: two districts, portfolio at risk | *Oversight from parish to ministry, from the same live record.* |
 | 10:15 | `auditor` | **Audit log**, search `Florence`: every step with a name | *The auditor reads everything and changes nothing.* |
-| 11:00 | Slides | Close: results, testing, what is next | *274 automated tests; every role sees only its own work; sample data only.* |
+| 11:00 | Slides | Close: results, testing, what is next | *291 automated tests; every role sees only its own work; sample data only.* |
 | 12:00 | | End | |
 
 If you are running late, drop the appeal (7:30 to 9:30) first, then the dashboard; never drop the loan steps.
