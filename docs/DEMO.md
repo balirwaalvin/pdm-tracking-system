@@ -92,6 +92,25 @@ If a password is mistyped five times, that account locks for 15 minutes. Use ano
 
 - Back on any workspace: *each of the ten roles sees only its own work in its own area; 264 automated tests check this on every change.*
 
+## More households to demonstrate
+
+If you are asked to show another household, every household below has its own login (password `pdm12345`) and sees only its own record, loan, receipts, SMS alerts and USSD.
+
+| Login | Household | Where they are | What to show |
+| --- | --- | --- | --- |
+| `household` | Grace Nakato | Loan appraised, waiting for a decision | `saccochair` approves → Grace sees it and the SMS |
+| `florence` | Florence Atim | Waiting for LC I verification | The main script (stages 2 to 8) |
+| `isaac` | Isaac Mugisha | Application submitted | `sacco` appraises → `saccochair` decides |
+| `ronald` | Ronald Lubega | Approved, not paid out | `sacco` records the payout → Ronald sees his schedule |
+| `sylvia` | Sylvia Nambi | Rejected, with the reason | Her page shows why; `groupexec` can apply again for her |
+| `moses` | Moses Waiswa | Repaying, up to date | Schedule, receipts, his published success story |
+| `henry` | Henry Mubiru | Repaying, in arrears | Overdue instalments; his complaint escalated to the sub-county |
+| `joyce` | Joyce Nalwoga | Defaulted (90+ days) | The default flag; a repayment closes it out |
+| `christine` | Christine Namale | Verified, no loan | A whole new loan: `groupexec` applies → `sacco` appraises → `saccochair` approves and pays out → record a repayment → sign in as `christine` |
+| `patrick` | Patrick Wasswa | Verified, no loan | The same as Christine, a second time |
+
+A new loan for Christine or Patrick takes about three minutes: they are in the Kitega Piggery Group, so the same `groupexec`, `sacco` and `saccochair` accounts handle them. After a reset, everyone is back at the stage above.
+
 ## Rehearsal record
 
 - **Mon 23 Nov 2026, live site:** the whole script was run in a browser on https://pdm.treez.tech, from a reset, every step clicked as written above. All ten stages passed. Pages answered in 1 to 2 seconds; a reset took about 35 seconds; the first visit after a sleep took about 33 seconds. The demo was reset again afterwards. Screenshots: [screenshots/](screenshots/).

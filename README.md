@@ -70,6 +70,8 @@ Open http://127.0.0.1:8000.
 
 The seed also adds a second district (Wakiso › Nsangi › Kyengera, with no demo users) so national figures compare two districts, and 14 sample households, 3 enterprise groups, 2 SACCOs (Seeta is eligible; Nantabulirwa still lacks its Supervisory Board) and a loan at each stage: submitted, appraised, approved, rejected, disbursed, repaying with arrears, and defaulted.
 
+Each of these sample households also has its own login (same password), at a different stage: `florence` (waiting for LC I), `isaac` (submitted), `ronald` (approved), `sylvia` (rejected), `moses` (repaying), `henry` (in arrears), `joyce` (defaulted), and `christine` and `patrick` (verified, no loan yet, ready for a new application). Each sees only their own household.
+
 These are sample people and places for demonstration only.
 
 ## Access by role

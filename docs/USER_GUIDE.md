@@ -8,7 +8,7 @@ Prototype with sample data only: the demo accounts all use the password `pdm1234
 
 ---
 
-## Household (demo: `household`)
+## Household (demo: `household`, and `florence`, `isaac`, `ronald`, `sylvia`, `moses`, `henry`, `joyce`, `christine`, `patrick`)
 
 - **My household** shows your record, whether your LC I has verified you, your enterprise group and SACCO, your loan, the repayment schedule, receipts and the SMS alerts sent to you.
 - **Raise a complaint** if something is wrong with your PDM service. You get a reference number by SMS. If nobody resolves it in 7 days, it goes to the next office up.
