@@ -89,6 +89,7 @@
   </div>
   <div class="d-flex flex-wrap gap-2 mb-4">
     <a class="btn btn-pdm" href="{% url 'my_household' %}">See my full record</a>
+    {% if access.ussd_simulator %}<a class="btn btn-outline-secondary" href="{% url 'ussd:simulator' %}"><i class="bi bi-phone me-1"></i>Use PDM on my phone</a>{% endif %}
     {% if access.raise_complaint %}<a class="btn btn-outline-secondary" href="{% url 'feedback:complaint_create' %}"><i class="bi bi-chat-left-text me-1"></i>Raise a complaint</a>{% endif %}
   </div>
   {% else %}
