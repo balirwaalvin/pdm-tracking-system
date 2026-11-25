@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 
 from accounts import access
 from dashboards.exports import CsvExportMixin
@@ -12,6 +12,7 @@ from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_require
 from accounts.scoping import check_unit_in_scope
 
 from .forms import EnterpriseGroupForm, HouseholdForm
+from . import eligibility
 from .models import EnterpriseGroup, Household
 
 # Who may open what comes from the access policy (accounts/access.py).
@@ -212,3 +213,23 @@ class EnterpriseGroupDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailVi
         context = super().get_context_data(**kwargs)
         context["members"] = self.object.members.select_related("village")
         return context
+
+
+class EligibilityView(TemplateView):
+    """Public self-check (no sign-in, nothing stored): could I get a PDM loan, and what next?"""
+
+    template_name = "registry/eligibility.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(rows=[(key, question, "") for key, question, _ in eligibility.QUESTIONS], next_steps=eligibility.NEXT_STEPS)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        answers = {key: request.POST.get(key, "") for key, _, _ in eligibility.QUESTIONS}
+        context["rows"] = [(key, question, answers[key]) for key, question, _ in eligibility.QUESTIONS]
+        context["submitted"] = True
+        context["answered"] = all(answers.values())
+        context["likely"], context["gaps"] = eligibility.screen(answers)
+        return self.render_to_response(context)

@@ -18,7 +18,7 @@ from registry.models import EnterpriseGroup, Household
 from saccos.models import Sacco
 
 # Pages anyone may open without signing in.
-PUBLIC = {"home", "login", "public_parishes", "public_parish", "public_parish_data", "ussd:callback"}
+PUBLIC = {"home", "login", "eligibility", "public_parishes", "public_parish", "public_parish_data", "ussd:callback"}
 
 
 def all_named_urls(resolver=None, namespace=""):

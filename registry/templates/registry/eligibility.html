@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Am I eligible? · PDM Tracking System{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8">
+  <p class="page-eyebrow mb-1">Parish Revolving Fund</p>
+  <h1 class="h3 mb-1">Am I eligible for PDM support?</h1>
+  <p class="text-muted">Answer four questions to see whether your household could get a PDM loan, and what to do next. Nothing you enter here is saved, and you do not need to sign in.</p>
+
+  {% if answered %}
+    <div class="card shadow-sm mb-3 {% if likely %}border-success{% else %}border-warning{% endif %}"><div class="card-body d-flex gap-3">
+      <div class="icon-tile {% if likely %}green{% else %}gold{% endif %}"><i class="bi {% if likely %}bi-check2-circle{% else %}bi-info-circle{% endif %}"></i></div>
+      <div>
+        {% if likely %}
+          <h2 class="h5 mb-1">You are likely to be eligible</h2>
+          <p class="mb-0">The final decision is made after your household is profiled, confirmed by your LC I and appraised by the SACCO.</p>
+        {% else %}
+          <h2 class="h5 mb-1">Not yet: here is what is missing</h2>
+          <ul class="mb-0">{% for gap in gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </div></div>
+  {% endif %}
+
+  <form method="post" class="card shadow-sm mb-3" novalidate>{% csrf_token %}<div class="card-body">
+    {% for key, question, answer in rows %}
+      <fieldset class="mb-3">
+        <legend class="form-label fs-6">{{ forloop.counter }}. {{ question }}</legend>
+        <div class="inline-choices">
+          <div class="form-check"><input class="form-check-input" type="radio" name="{{ key }}" id="{{ key }}-yes" value="yes"{% if answer == "yes" %} checked{% endif %}><label class="form-check-label" for="{{ key }}-yes">Yes</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="{{ key }}" id="{{ key }}-no" value="no"{% if answer == "no" %} checked{% endif %}><label class="form-check-label" for="{{ key }}-no">No</label></div>
+        </div>
+      </fieldset>
+    {% endfor %}
+    {% if submitted and not answered %}<div class="alert alert-warning">Please answer all four questions.</div>{% endif %}
+    <button class="btn btn-pdm">Check</button>
+  </div></form>
+
+  <div class="card shadow-sm"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">How to apply</h2>
+    <ol class="mb-0">{% for step in next_steps %}<li class="mb-1">{{ step }}</li>{% endfor %}</ol>
+    <p class="small text-muted mt-2 mb-0">PDM services are free. Report anyone who asks you for money: dial the PDM USSD code, option 3.</p>
+  </div></div>
+</div></div>
+{% endblock %}
