@@ -83,6 +83,24 @@ HOUSEHOLDS = [
     ("Ronald Lubega", "CM84004680STUV", "256700000021", "M", "adult", True, 6, "very_poor", "Bajjo", "Kitega Piggery Group", True),
     ("Joyce Nalwoga", "CF80005791WXYZ", "256700000022", "F", "adult", False, 5, "poor", "Kitega", "Kitega Piggery Group", True),
     ("Henry Mubiru", "CM93006802ABCE", "256700000023", "M", "youth", False, 3, "poor", "Bajjo", "Kitega Piggery Group", True),
+    # Two verified households with no loan yet, so a whole new loan can be shown more than once.
+    ("Christine Namale", "CF89004713DEFG", "256700000024", "F", "youth", False, 4, "very_poor", "Kitega", "Kitega Piggery Group", True),
+    ("Patrick Wasswa", "CM87005824HIJK", "256700000025", "M", "adult", False, 6, "poor", "Bajjo", "Kitega Piggery Group", True),
+]
+
+# Household logins (username, NIN of the household they head). Each sees only their own household.
+# "household" (Grace) is the main demo account; the others are at different stages of the journey.
+HOUSEHOLD_ACCOUNTS = [
+    ("household", "CF85001234ABCD"),  # Grace Nakato: loan appraised, waiting for the SACCO's decision
+    ("florence", "CF70007890IJKL"),   # Florence Atim: waiting for LC I verification, no loan yet
+    ("isaac", "CM92004567EFGH"),      # Isaac Mugisha: application submitted to the SACCO
+    ("ronald", "CM84004680STUV"),     # Ronald Lubega: loan approved, waiting to be paid out
+    ("sylvia", "CF91003579OPQR"),     # Sylvia Nambi: application rejected, with the reason; can reapply
+    ("moses", "CM86002468KLMN"),      # Moses Waiswa: repaying, up to date, published success story
+    ("henry", "CM93006802ABCE"),      # Henry Mubiru: repaying but in arrears; escalated complaint
+    ("joyce", "CF80005791WXYZ"),      # Joyce Nalwoga: defaulted (90+ days overdue)
+    ("christine", "CF89004713DEFG"),  # Christine Namale: verified, no loan: ready for a new application
+    ("patrick", "CM87005824HIJK"),    # Patrick Wasswa: verified, no loan: ready for a new application
 ]
 
 
@@ -94,6 +112,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        self.password = options["password"]
         units = self.create_units()
         self.create_users(units, options["password"])
         self.create_groups_and_households(units)
@@ -189,9 +208,26 @@ class Command(BaseCommand):
                     verification_note="Known to the village; lives here.",
                 )
             Household.objects.update_or_create(nin=nin, defaults=defaults)
-        # The demo household user is Grace Nakato, head of the first household.
-        Household.objects.filter(nin="CF85001234ABCD").update(account=User.objects.get(username="household"))
+        self.create_household_accounts()
         self.stdout.write(f"  {len(GROUPS)} enterprise groups and {len(HOUSEHOLDS)} households")
+
+    def create_household_accounts(self):
+        """A login for each household in HOUSEHOLD_ACCOUNTS, linked to their own record."""
+        household_role = Group.objects.get(name=roles.HOUSEHOLD)
+        for username, nin in HOUSEHOLD_ACCOUNTS:
+            household = Household.objects.get(nin=nin)
+            first, _, last = household.head_name.partition(" ")
+            user, _ = User.objects.update_or_create(
+                username=username,
+                defaults={"first_name": first, "last_name": last, "phone": household.phone, "admin_unit": household.village},
+            )
+            user.set_password(self.password)
+            user.save()
+            user.groups.set([household_role])
+            Household.objects.filter(account=user).exclude(pk=household.pk).update(account=None)
+            household.account = user
+            household.save(update_fields=["account"])
+        self.stdout.write(f"  {len(HOUSEHOLD_ACCOUNTS)} household logins")
 
     def create_saccos(self, units):
         sacco_user = User.objects.get(username="sacco")
