@@ -14,6 +14,8 @@ from accounts import access
 from accounts.mixins import RoleRequiredMixin
 from registry.models import AdminUnit
 
+from registry.eligibility import household_checklist
+
 from . import public, queries, reports, workspace
 
 DASHBOARD_ROLES = access.roles_for("dashboard")  # from the access policy
@@ -85,6 +87,7 @@ class MyHouseholdView(RoleRequiredMixin, TemplateView):
                 {"loan": loan, "schedule": loan.schedule_with_status(), "sms": loan.sms_messages.all()} for loan in loans
             ]
             context["complaints"] = household.complaints.prefetch_related("responses")
+            context["checklist"] = household_checklist(household)
         return context
 
 
