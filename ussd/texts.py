@@ -4,13 +4,13 @@
 falling back to English. To correct a translation, change it here; the
 menu logic in menu.py does not need to change.
 
-The Luganda was drafted for this prototype and should be checked by a
+The Luganda was drafted for this system and should be checked by a
 native speaker before real use.
 """
 
 TEXTS = {
     "en": {
-        "menu": "PDM (prototype)\n{name}\n1. My PDM status\n2. My loan\n3. Report a problem\n4. Track a complaint\n0. Luganda",
+        "menu": "PDM Services\n{name}\n1. My PDM status\n2. My loan\n3. Report a problem\n4. Track a complaint\n0. Luganda",
         "not_registered": "This number is not registered under PDM. Visit your Parish Chief to be profiled.",
         "invalid": "Invalid choice. Please dial again.",
         # status
@@ -46,7 +46,7 @@ TEXTS = {
         "reply": "Reply: {message}",
     },
     "lg": {
-        "menu": "PDM (ekyokugezesa)\n{name}\n1. Embeera yange mu PDM\n2. Looni yange\n3. Loopa ekizibu\n4. Goberera okwemulugunya\n0. English",
+        "menu": "Obuweereza bwa PDM\n{name}\n1. Embeera yange mu PDM\n2. Looni yange\n3. Loopa ekizibu\n4. Goberera okwemulugunya\n0. English",
         "not_registered": "Ennamba eno tewandiisibwa mu PDM. Genda eri Omukulu w'Omuluka akuwandiike.",
         "invalid": "Ky'olonze si kituufu. Kuba nate.",
         "village": "Ekyalo: {village}",

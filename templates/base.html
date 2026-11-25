@@ -14,7 +14,7 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body>
-  <div class="prototype-banner text-center py-1">Prototype with sample data · not an official government system</div>
+  <div class="prototype-banner text-center">Demonstration system with sample data · not an official government service</div>
 
   <header class="topbar">
     <div class="h-100 d-flex align-items-center justify-content-between gap-3 px-3 px-lg-4">
@@ -29,6 +29,19 @@
       </div>
       <nav class="d-flex align-items-center gap-1" aria-label="Account">
         {% if user.is_authenticated %}
+          <div class="dropdown me-2">
+            <button class="btn btn-bell" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications: {{ notification_count }} waiting">
+              <i class="bi bi-bell"></i>{% if notification_count %}<span class="bell-count">{{ notification_count }}</span>{% endif %}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end notif-menu">
+              <div class="px-3 py-2 fw-bold border-bottom">Waiting for you</div>
+              {% for task in notifications %}
+                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ task.url }}"><i class="bi bi-{{ task.icon }} text-muted"></i><span class="flex-grow-1">{{ task.label }}</span><span class="badge text-bg-warning">{{ task.count }}</span></a>
+              {% empty %}
+                <div class="px-3 py-3 small text-muted">Nothing is waiting for you.</div>
+              {% endfor %}
+            </div>
+          </div>
           <div class="dropdown">
             <button class="btn p-0 border-0 user-chip" type="button" data-bs-toggle="dropdown" aria-expanded="false">
               <span class="avatar" aria-hidden="true">{{ user.first_name|default:user.username|first|upper }}{{ user.last_name|first|upper }}</span>
@@ -93,7 +106,8 @@
         {% endfor %}
         {% block content %}{% endblock %}
         <footer class="site-footer d-flex flex-wrap justify-content-between gap-2">
-          <span>PDM Tracking System · E-Commerce, E-Business &amp; E-Governance · Uganda Christian University</span>
+          <span>PDM Tracking System · Parish Development Model information system · v1.0</span>
+          <span>Help: visit your parish office, or dial the PDM USSD code</span>
           <a href="{% url 'public_parishes' %}">Public parish pages</a>
         </footer>
       </div>
