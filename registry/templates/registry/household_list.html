@@ -7,9 +7,9 @@
 </div>
 
 <form class="row g-2 mb-3" method="get">
-  <div class="col-md-6"><input class="form-control" type="search" name="q" value="{{ request.GET.q }}" placeholder="Search by name or NIN"></div>
+  <div class="col-md-6"><input class="form-control" type="search" name="q" aria-label="Search" value="{{ request.GET.q }}" placeholder="Search by name or NIN"></div>
   <div class="col-md-4">
-    <select class="form-select" name="status">
+    <select class="form-select" name="status" aria-label="Status">
       <option value="">All verification statuses</option>
       {% for value, label in statuses %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
     </select>
