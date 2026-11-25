@@ -60,8 +60,8 @@ Results: [SECURITY_CHECK.md](SECURITY_CHECK.md).
 
 - [x] Full rehearsal on the live site, timed (see the rehearsal record in DEMO.md).
 - [x] Update the project report and take screenshots for the slides ([screenshots/](screenshots/)).
-- [x] Code freeze: the rehearsed build is commit `e75d25e` on `main` (re-rehearsed on the live site on 25 Nov 2026); tag it `v1.0-presentation` on GitHub (Releases → Draft a new release → new tag on that commit). From now until the presentation, change only what is broken in the demo or the Luganda wording, and run the tests before every push.
-  - If a late change goes wrong, go back to the rehearsed build: in the Render dashboard open the deploy for commit `e75d25e` and choose **Rollback**, or run `git revert` on the bad commit and push.
+- [x] Code freeze: the rehearsed build is commit `9d31d82` on `main` (re-rehearsed on the live site on 25 Nov 2026); tag it `v1.0-presentation` on GitHub (Releases → Draft a new release → new tag on that commit). From now until the presentation, change only what is broken in the demo or the Luganda wording, and run the tests before every push.
+  - If a late change goes wrong, go back to the rehearsed build: in the Render dashboard open the deploy for commit `9d31d82` and choose **Rollback**, or run `git revert` on the bad commit and push.
 
 ## Thu 26 Nov: presentation
 
