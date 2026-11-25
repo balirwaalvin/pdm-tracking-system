@@ -112,10 +112,10 @@ class WorkspaceTests(TestCase):
         self.assertEqual(tasks["Approved loans to pay out"], 1)  # Ronald
         self.assertEqual(tasks["Loans in arrears"], 2)  # Henry and Joyce
 
-    def test_home_lists_what_is_outside_the_role(self):
+    def test_home_does_not_mention_pages_outside_the_role(self):
         response = self.home("lc1")
-        self.assertContains(response, "Not part of your role")
-        self.assertIn("audit_log", [p.key for p in response.context["denied"]])
+        self.assertNotContains(response, "Not part of your role")  # removed for a cleaner, real-looking portal
+        self.assertNotContains(response, "Audit log")  # pages outside the role are simply not mentioned
 
     def test_household_home_shows_only_its_own_record(self):
         response = self.home("household")
@@ -141,3 +141,30 @@ class WorkspaceTests(TestCase):
         grace = User.objects.get(username="household").household_record
         self.assertEqual(self.client.get(reverse("registry:household_detail", args=[grace.pk])).status_code, 403)
         self.assertEqual(self.client.get(reverse("loans:loan_detail", args=[grace.loans.first().pk])).status_code, 403)
+
+
+class NotificationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        seed()
+
+    def setUp(self):
+        self.client.defaults["HTTP_HOST"] = "localhost"
+
+    def test_bell_counts_the_work_waiting(self):
+        self.client.force_login(User.objects.get(username="saccochair"))
+        response = self.client.get(reverse("home"))
+        tasks = [t for t in response.context["tasks"] if t["count"]]
+        self.assertEqual(response.context["notification_count"], sum(t["count"] for t in tasks))
+        self.assertContains(response, "bell-count")
+
+    def test_household_has_no_notifications(self):
+        self.client.force_login(User.objects.get(username="household"))
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.context["notification_count"], 0)
+        self.assertContains(response, "Nothing is waiting for you.")
+
+    def test_demo_accounts_only_with_demo_in_the_address(self):
+        self.client.logout()
+        self.assertNotContains(self.client.get(reverse("login")), "Demo accounts")
+        self.assertContains(self.client.get(reverse("login") + "?demo"), "Demo accounts")

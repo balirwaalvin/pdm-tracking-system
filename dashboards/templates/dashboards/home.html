@@ -36,7 +36,7 @@
 
 <div class="card shadow-sm"><div class="card-body p-4">
   <h2 class="h5 mb-1">How a household moves through PDM</h2>
-  <p class="text-muted mb-4">The ten stages this prototype follows, each handled by the official responsible.</p>
+  <p class="text-muted mb-4">Ten stages, each handled by the official responsible and recorded under their name.</p>
   <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3">
     {% for title, text in journey %}
     <div class="col journey-step"><span class="step-no">{{ forloop.counter }}</span><div><strong>{{ title }}</strong><div class="small text-muted">{{ text }}</div></div></div>
@@ -155,10 +155,6 @@
       <div class="small mb-0 p-3 rounded-3" style="background: var(--pdm-ground)"><i class="bi bi-clock-history me-1"></i>{% if previous_sign_in %}Your previous sign-in: {{ previous_sign_in.created_at|date:"j M Y, H:i" }}{% if previous_sign_in.ip_address %} from {{ previous_sign_in.ip_address }}{% endif %}.{% else %}This is your first recorded sign-in.{% endif %}
         {% if failed_since %}<span class="text-danger fw-semibold">{{ failed_since }} failed attempt{{ failed_since|pluralize }} before this sign-in.</span>{% endif %}
         Not you? <a href="{% url 'password_change' %}">Change your password</a>.</div>
-      {% if denied %}
-      <h3 class="h6 mt-3">Not part of your role</h3>
-      <div class="d-flex flex-wrap gap-1">{% for page in denied %}<span class="badge text-bg-secondary"><i class="bi bi-lock me-1"></i>{{ page.label }}</span>{% endfor %}</div>
-      {% endif %}
     </div></div>
   </div>
 </div>

@@ -56,8 +56,6 @@ class HomeView(TemplateView):
             tasks=workspace.tasks_for(user),
             pages=pages,
             actions=access.actions_for(user),
-            # "My household" is a household's own page, not something officials lack.
-            denied=[f for f in access.PAGES if f not in pages and f.key != "my_household"],
         )
         # The sign-in before this one, and failed attempts since, so users can spot misuse.
         successes = list(user.sign_ins.filter(succeeded=True).order_by("-created_at")[:2])
