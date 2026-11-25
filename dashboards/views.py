@@ -14,6 +14,7 @@ from accounts import access
 from accounts.mixins import RoleRequiredMixin
 from registry.models import AdminUnit
 
+from feedback.appeals import can_appeal
 from registry.eligibility import household_checklist
 
 from . import public, queries, reports, workspace
@@ -84,7 +85,9 @@ class MyHouseholdView(RoleRequiredMixin, TemplateView):
         if household is not None:
             loans = household.loans.select_related("sacco", "disbursement").prefetch_related("repayments", "sms_messages")
             context["loans"] = [
-                {"loan": loan, "schedule": loan.schedule_with_status(), "sms": loan.sms_messages.all()} for loan in loans
+                {"loan": loan, "schedule": loan.schedule_with_status(), "sms": loan.sms_messages.all(),
+                 "can_appeal": can_appeal(loan, self.request.user), "appeal": getattr(loan, "appeal", None)}
+                for loan in loans
             ]
             context["complaints"] = household.complaints.prefetch_related("responses")
             context["checklist"] = household_checklist(household)

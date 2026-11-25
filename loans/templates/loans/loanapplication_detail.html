@@ -44,6 +44,8 @@
       {% if loan.decided_by %}
         <hr><p class="mb-1"><strong>Decision:</strong> {% if loan.status == "rejected" %}<span class="badge text-bg-danger">Rejected</span>{% else %}<span class="badge text-bg-success">Approved</span>{% endif %} by {{ loan.decided_by|default:"the SACCO Board" }} on {{ loan.decided_at|date:"j M Y" }}</p>
         {% if loan.decision_reason %}<p class="mb-0">{{ loan.decision_reason|linebreaksbr }}</p>{% endif %}
+        {% if appeal %}<p class="mt-2 mb-0"><strong>Appeal {{ appeal.reference }}:</strong> {% include "feedback/_appeal_badge.html" %}{% if access.appeals %} · <a href="{% url 'feedback:appeal_detail' appeal.pk %}">open</a>{% endif %}</p>
+        {% elif can_appeal %}<a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'feedback:appeal_create' loan.pk %}"><i class="bi bi-arrow-repeat me-1"></i>Appeal this decision</a>{% endif %}
       {% endif %}
       {% if appraised_by_me %}
         <hr><p class="small text-muted mb-0"><strong>Maker-checker:</strong> you appraised this loan, so another SACCO official must approve or reject it.</p>

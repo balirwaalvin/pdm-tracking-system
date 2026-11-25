@@ -14,6 +14,8 @@ from dashboards.exports import CsvExportMixin
 from accounts.mixins import RoleRequiredMixin, ScopedQuerysetMixin, role_required
 from accounts.scoping import check_unit_in_scope
 
+from feedback.appeals import can_appeal
+
 from . import notifications, workflow
 from .forms import AppraisalForm, DecisionForm, DisbursementForm, LoanApplicationForm, RepaymentForm
 from .models import LoanApplication, Repayment
@@ -111,6 +113,8 @@ class LoanDetailView(RoleRequiredMixin, ScopedQuerysetMixin, DetailView):
         if context["can_decide"]:
             context["decision_form"] = DecisionForm()
         context["sms_messages"] = loan.sms_messages.all()
+        context["appeal"] = getattr(loan, "appeal", None)
+        context["can_appeal"] = can_appeal(loan, user)
         context["steps"] = progress_steps(loan)
         context["history"] = LogEntry.objects.get_for_object(loan).select_related("actor").order_by("timestamp")
         return context

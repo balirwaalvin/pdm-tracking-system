@@ -36,6 +36,8 @@
   </div>
   <p class="text-muted small">{{ loan.enterprise }} · {{ loan.sacco.name }} · {{ loan.term_months }} months</p>
   {% if loan.status == "rejected" and loan.decision_reason %}<p><strong>Reason:</strong> {{ loan.decision_reason }}</p>{% endif %}
+  {% if item.appeal %}<p class="mb-2"><strong>Your appeal {{ item.appeal.reference }}:</strong> {% include "feedback/_appeal_badge.html" with appeal=item.appeal %}{% if item.appeal.decision_note %} · {{ item.appeal.decision_note }}{% endif %}</p>
+  {% elif item.can_appeal %}<a class="btn btn-sm btn-outline-secondary mb-2" href="{% url 'feedback:appeal_create' loan.pk %}"><i class="bi bi-arrow-repeat me-1"></i>Appeal this decision</a>{% endif %}
   {% if item.schedule %}
     <p class="mb-2">Total due UGX <strong>{{ loan.total_due|intcomma }}</strong> · repaid UGX <strong>{{ loan.total_repaid|intcomma }}</strong> · balance UGX <strong>{{ loan.balance|intcomma }}</strong>
       {% with a=loan.arrears %}{% if a %}<br><span class="text-danger">Overdue: UGX {{ a|intcomma }}. Please visit your SACCO.</span>{% endif %}{% endwith %}</p>

@@ -11,7 +11,7 @@ from django.urls import reverse
 
 from accounts import roles as r
 from accounts.scoping import scope_queryset
-from feedback.models import Complaint, SuccessStory
+from feedback.models import Appeal, Complaint, SuccessStory
 from loans.models import LoanApplication
 from loans.workflow import ACTIVE_STATUSES
 from registry.models import EnterpriseGroup, Household
@@ -24,7 +24,7 @@ Verification = Household.Verification
 # A to-do item's icon follows the page it opens.
 _ICON_BY_PATH = [
     ("/loans/arrears", "exclamation-triangle"), ("/loans", "cash-coin"), ("/registry/households", "people"),
-    ("/registry/groups", "diagram-3"), ("/saccos", "bank"), ("/complaints/stories", "stars"),
+    ("/registry/groups", "diagram-3"), ("/saccos", "bank"), ("/complaints/stories", "stars"), ("/complaints/appeals", "arrow-repeat"),
     ("/complaints", "megaphone"), ("/audit", "shield-check"), ("/accounts/sign-ins", "key"),
 ]
 
@@ -152,6 +152,9 @@ def tasks_for(user):
                   _household_list(Verification.PENDING)),
             _arrears_item(user),
             _complaints_item(user, Complaint.Level.SUBCOUNTY),
+            _item("Appeals to decide",
+                  scope_queryset(Appeal.objects.filter(status=Appeal.Status.PENDING), user, "loan__household__village").count(),
+                  reverse("feedback:appeal_list"), "Dismiss, or refer the loan back to the SACCO."),
         ]
     if role == r.DISTRICT_OFFICIAL:
         releases = scope_queryset(FundRelease.objects.filter(confirmed_at=None), user, "sacco__parish")
