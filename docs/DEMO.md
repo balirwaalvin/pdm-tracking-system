@@ -69,9 +69,10 @@ If a password is mistyped five times, that account locks for 15 minutes. Use ano
 - **Record repayment**: `53000`, today, cash, receipt reference `R-001`. The loan moves to **Repaying** by itself; the schedule marks instalment 1 as paid; open the **receipt** (RCPT number).
 - Then **Arrears** in the menu: Henry and Joyce. Say: *the system flags defaults at 90 days overdue.*
 
-### 8. Check by USSD (1.5 min): `parishchief`
+### 8. Check by USSD (2 min): `household`, then `parishchief`
 
-- **USSD** in the menu → dial as **Florence Atim** → `2` (My loan): balance and next instalment.
+- Start with the household's own view: sign in as **`household`** (Grace) → **USSD** → **Dial** → `2`. She can only dial with her own number. Say: *the household is the main stakeholder; this is what they see on any phone.*
+- Then as **`parishchief`**, the **USSD help desk**: dial as **Florence Atim** → `2` (My loan): balance and next instalment.
 - Dial again → `0` switches to **Luganda** → `2` again. Say: *any phone, no data needed, free; the language is remembered.*
 - Dial again → `3` Report a problem → `5` *Asked for a bribe* → type `Someone asked me for 20000`. Note the reference (**PDM-000006**). Say: *bribery reports skip the parish and go straight to the sub-county.*
 

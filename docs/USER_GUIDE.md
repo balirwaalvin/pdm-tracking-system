@@ -12,7 +12,7 @@ Prototype with sample data only: the demo accounts all use the password `pdm1234
 
 - **My household** shows your record, whether your LC I has verified you, your enterprise group and SACCO, your loan, the repayment schedule, receipts and the SMS alerts sent to you.
 - **Raise a complaint** if something is wrong with your PDM service. You get a reference number by SMS. If nobody resolves it in 7 days, it goes to the next office up.
-- **On any phone**, dial the PDM USSD code: 1 status, 2 loan, 3 report a problem, 4 track a complaint, 0 Luganda or English.
+- **USSD** in the menu shows the PDM phone menu with your own number: the same one you reach by dialling the PDM USSD code on any phone. 1 status, 2 loan, 3 report a problem, 4 track a complaint, 0 Luganda or English.
 - PDM services are free. Report anyone who asks you for money (option 3, then 5).
 
 ## LC I Chairperson (demo: `lc1`)

@@ -78,7 +78,7 @@ Access follows least privilege. One policy table, `accounts/access.py`, decides 
 
 | Role | My household | Dashboard | Households | Groups | SACCOs | Loans | Arrears | USSD | Audit log | Can do |
 | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | --- |
-| Household | ✓ |  |  |  |  |  |  |  |  | read only |
+| Household | ✓ |  |  |  |  |  |  | ✓ |  | raise complaints; use USSD with own number |
 | Enterprise group executive |  |  | ✓ | ✓ |  | ✓ |  |  |  | start a loan application |
 | LC I Chairperson |  |  | ✓ |  |  |  |  | ✓ |  | verify households |
 | Parish Chief |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  | register a household |
