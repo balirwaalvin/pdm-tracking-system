@@ -4,6 +4,8 @@ Each of the ten members has three things: a **segment to present** in the 12-min
 
 **How the demo runs:** Alvin drives the laptop throughout, which keeps the clicks quick and avoids changing seats. Each member stands, says their lines, and tells Alvin what to click. Timings follow the [12-minute plan in DEMO.md](../DEMO.md).
 
+A printable version of this page, with each member's script, screenshots, diagrams and model answers, is [PDM-Presentation-Briefing.pdf](PDM-Presentation-Briefing.pdf).
+
 Names are from the team slide. Where possible, each member's segment is close to the slides they presented at the proposal stage (for example, Stephen presented the fund flow and now presents disbursement and repayment). The [role matrix](APPENDIX_B_ROLE_MATRIX.md) matches this page.
 
 ## Summary
