@@ -99,3 +99,52 @@ flowchart LR
 | Late paper reports | Live dashboards and quarterly reports | Dashboard, Reports |
 
 **Target:** submission-to-decision time **under 7 days**, with every refusal carrying a reason (see section 3).
+
+## 2.4 System flowchart: one application from start to finish
+
+Standard flowchart symbols: rounded ends are start and finish points, diamonds are decisions, and pink boxes are refusals or problems. Every rule shown is enforced by the prototype (for example, a rejection needs a reason, the official who appraises cannot decide, and a payout cannot exceed the SACCO's confirmed funds). Image: [diagrams/D6-system-flowchart.png](diagrams/D6-system-flowchart.png).
+
+```mermaid
+flowchart TD
+  A([Start: household hears about PDM]) --> B[/Checks eligibility online, free, nothing saved/]
+  B --> C[Parish Chief profiles the household: NIN, village, wealth rank]
+  C --> D{NIN valid, unique and<br/>found in the ID register?}
+  D -- No --> D1[Correct the details or<br/>refer to NIRA] --> C
+  D -- Yes --> E{LC I confirms the household<br/>lives in the village?}
+  E -- No, with a reason --> E1([Rejected: household is told why,<br/>can raise a complaint])
+  E -- Yes --> F{In an enterprise group linked<br/>to an eligible SACCO?}
+  F -- No --> F1[CDO registers the group and<br/>links it to the parish SACCO] --> F
+  F -- Yes --> G[Group executive applies:<br/>UGX 10,000 to 1,000,000, 3 to 24 months]
+  G --> H{Verified member and<br/>no other open loan?}
+  H -- No --> H1([Refused by the form,<br/>with the reason shown])
+  H -- Yes --> I[Submitted to the SACCO · SMS]
+  I --> J[SACCO official appraises:<br/>viability, repayment, group, out of 15]
+  J --> K{A second SACCO official decides<br/>maker-checker}
+  K -- Reject, reason required --> L[Rejected · SMS with the reason]
+  L --> M{Household appeals<br/>within 30 days?}
+  M -- No --> M1([Rejection stands])
+  M -- Yes --> N{Sub-county decides<br/>the appeal}
+  N -- Dismiss, with a note --> M1
+  N -- Uphold --> J2[Back to the SACCO for a fresh decision] --> K
+  K -- Approve --> O[Approved · SMS]
+  O --> P{Payout within the approved amount<br/>and the SACCO's confirmed funds?}
+  P -- No --> P1[Wait for a fund release:<br/>national records, district confirms] --> P
+  P -- Yes --> Q[Disbursed · repayment schedule at 6% a year · SMS]
+  Q --> R[Household repays · numbered receipt · SMS]
+  R --> S{Balance paid in full?}
+  S -- Yes --> T([Loan closed])
+  S -- No --> U{Instalment overdue?}
+  U -- No --> R
+  U -- Yes --> V{More than 90 days overdue?}
+  V -- No --> V1[On the arrears list for the SACCO<br/>and officials above] --> R
+  V -- Yes --> W[Flagged as defaulted] --> R
+
+  classDef term fill:#0B2E6B,stroke:#0B2E6B,color:#FFFFFF
+  classDef dec fill:#FFF5D1,stroke:#B88A00,color:#14213A
+  classDef bad fill:#FDE6EF,stroke:#CC0A5A,color:#14213A
+  classDef step fill:#FFFFFF,stroke:#5F6980,color:#14213A
+  class A,T term
+  class D,E,F,H,K,M,N,P,S,U,V dec
+  class E1,H1,M1,L,W bad
+  class B,C,D1,F1,G,I,J,J2,O,P1,Q,R,V1 step
+```
