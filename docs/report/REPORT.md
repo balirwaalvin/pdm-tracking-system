@@ -6,7 +6,7 @@
 
 **Live prototype:** https://pdm.treez.tech · **Repository:** https://github.com/balirwaalvin/pdm-tracking-system (access given to the lecturer on request)
 
-> **Draft.** Sections marked **[verify]** contain figures written from memory that must be checked against the cited source before submission. Each section names its owner, who checks it and must be able to defend it.
+> **Superseded:** the submitted version is [PDM-Final-Project-Report.pdf](PDM-Final-Project-Report.pdf). This Markdown file is the earlier draft.
 
 ---
 
